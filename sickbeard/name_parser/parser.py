@@ -26,6 +26,9 @@ import sickbeard
 
 from sickbeard import logger
 
+import subprocess
+
+
 class NameParser(object):
     def __init__(self, file_name=True):
 
@@ -67,6 +70,8 @@ class NameParser(object):
 
     def _parse_string(self, name):
         
+#	logger.log("XZY - Name: " + name , logger.DEBUG )
+
         if not name:
             return None
         
@@ -78,8 +83,13 @@ class NameParser(object):
             
             result = ParseResult(name)
             result.which_regex = [cur_regex_name]
+	    if cur_regex_name[:3] == "doc":
+               result.is_Documentary = True
             
             named_groups = match.groupdict().keys()
+
+            if 'channel_name' in named_groups:
+                result.channel_name = match.group('channel_name')
 
             if 'series_name' in named_groups:
                 result.series_name = match.group('series_name')
@@ -248,7 +258,9 @@ class ParseResult(object):
                  episode_numbers=None,
                  extra_info=None,
                  release_group=None,
-                 air_date=None
+                 air_date=None,
+                 channel_name=None,
+		 is_Documentary=False
                  ):
 
         self.original_name = original_name
@@ -266,6 +278,9 @@ class ParseResult(object):
         self.air_date = air_date
         
         self.which_regex = None
+        self.channel_name = channel_name
+        self.is_Documentary = is_Documentary
+
         
     def __eq__(self, other):
         if not other:
@@ -282,6 +297,10 @@ class ParseResult(object):
         if self.release_group != other.release_group:
             return False
         if self.air_date != other.air_date:
+            return False
+        if self.channel_name != other.channel_name:
+            return False
+        if self.is_Documentary != other.is_Documentary:
             return False
         
         return True
