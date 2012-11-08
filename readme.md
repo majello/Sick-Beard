@@ -1,4 +1,13 @@
-Sick Beard
+Sick Beard Majello Fork
+=====
+
+I have a few plans for this fork of the sickbeard piratebay edition:
+* switchable db backends (such as mysql) for large libraries
+* performance, as I have this running on a NAS, with a rather large library
+* better support for documentaries, which i consider broken in the original releases
+That should be enough for the time being.
+
+Original
 =====
 
 *Sick Beard is currently an alpha release. There may be severe bugs in it and at any given time it may not work at all.*
