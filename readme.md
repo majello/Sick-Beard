@@ -5,6 +5,7 @@ I have a few plans for this fork of the sickbeard piratebay edition:
 * switchable db backends (such as mysql) for large libraries
 * performance, as I have this running on a NAS, with a rather large library
 * better support for documentaries, which i consider broken in the original releases
+* enhanced name handling
 That should be enough for the time being.
 
 Original
