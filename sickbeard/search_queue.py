@@ -73,6 +73,8 @@ class SearchQueue(generic_queue.GenericQueue):
             generic_queue.GenericQueue.add_item(self, item)
         elif isinstance(item, ManualSearchQueueItem) and not self.is_ep_in_queue(item.ep_obj):
             generic_queue.GenericQueue.add_item(self, item)
+        elif isinstance(item, DocumentaryQueueItem) and not self.is_ep_in_queue(item.ep_obj):
+            generic_queue.GenericQueue.add_item(self, item)
         else:
             logger.log(u"Not adding item, it's already in the queue", logger.DEBUG)
 
@@ -232,3 +234,42 @@ class BacklogQueueItem(generic_queue.QueueItem):
                 break
 
         return wantSeason
+
+class DocumentaryQueueItem(generic_queue.QueueItem):
+    def __init__(self, ep_obj):
+        generic_queue.QueueItem.__init__(self, 'Documentary Search', MANUAL_SEARCH)
+        self.priority = generic_queue.QueuePriorities.LOW
+        self.ep_obj = ep_obj
+        self.success = None
+
+    def execute(self):
+        generic_queue.QueueItem.execute(self)
+
+        logger.log("Searching for download for " + self.ep_obj.prettyName())
+
+        foundEpisode = search.findEpisode(self.ep_obj, manualSearch=True)
+        result = False
+
+        if not foundEpisode:
+            ui.notifications.message('No downloads were found', "Couldn't find a download for <i>%s</i>" % self.ep_obj.prettyName())
+            logger.log(u"Unable to find a download for "+self.ep_obj.prettyName())
+
+        else:
+
+            # just use the first result for now
+            logger.log(u"Downloading episode from " + foundEpisode.url)
+            result = search.snatchEpisode(foundEpisode)
+            providerModule = foundEpisode.provider
+            if not result:
+                ui.notifications.error('Error while attempting to snatch '+foundEpisode.name+', check your logs')
+            elif providerModule == None:
+                ui.notifications.error('Provider is configured incorrectly, unable to download')
+
+        self.success = result
+
+    def finish(self):
+        # don't let this linger if something goes wrong
+        if self.success == None:
+            self.success = False
+        generic_queue.QueueItem.finish(self)
+

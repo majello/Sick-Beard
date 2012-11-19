@@ -128,21 +128,31 @@ class BacklogSearcher:
             if curShow.paused:
                 continue
 
-            if curShow.air_by_date:
-                segments = [x[1] for x in self._get_air_by_date_segments(curShow.tvdbid, fromDate)]
+            if "documentary" in curShow.genre.lower():
+                for snum in curShow.episodes.keys():
+                    sn = curShow.episodes[snum]
+                    for epnum in sn.keys():
+                        ep = sn[epnum]
+                        self.currentSearchInfo = {'title': curShow.name + " Season "+str(snum)+" Episode "+str(epnum)}
+                        backlog_queue_item = search_queue.DocumentaryQueueItem(ep)
+                        sickbeard.searchQueueScheduler.action.add_item(backlog_queue_item)   #@UndefinedVariable
+                        pass
             else:
-                segments = self._get_season_segments(curShow.tvdbid, fromDate)
-
-            for cur_segment in segments:
-
-                self.currentSearchInfo = {'title': curShow.name + " Season "+str(cur_segment)}
-
-                backlog_queue_item = search_queue.BacklogQueueItem(curShow, cur_segment)
-
-                if not backlog_queue_item.wantSeason:
-                    logger.log(u"Nothing in season "+str(cur_segment)+" needs to be downloaded, skipping this season", logger.DEBUG)
+                if curShow.air_by_date:
+                    segments = [x[1] for x in self._get_air_by_date_segments(curShow.tvdbid, fromDate)]
                 else:
-                    sickbeard.searchQueueScheduler.action.add_item(backlog_queue_item)  #@UndefinedVariable
+                    segments = self._get_season_segments(curShow.tvdbid, fromDate)
+    
+                for cur_segment in segments:
+    
+                    self.currentSearchInfo = {'title': curShow.name + " Season "+str(cur_segment)}
+    
+                    backlog_queue_item = search_queue.BacklogQueueItem(curShow, cur_segment)
+    
+                    if not backlog_queue_item.wantSeason:
+                        logger.log(u"Nothing in season "+str(cur_segment)+" needs to be downloaded, skipping this season", logger.DEBUG)
+                    else:
+                        sickbeard.searchQueueScheduler.action.add_item(backlog_queue_item)  #@UndefinedVariable
 
         # don't consider this an actual backlog search if we only did recent eps
         # or if we only did certain shows

@@ -28,6 +28,7 @@ from sickbeard import logger
 
 import subprocess
 
+from sickbeard import invalidNames
 
 class NameParser(object):
     def __init__(self, file_name=True):
@@ -83,8 +84,9 @@ class NameParser(object):
             
             result = ParseResult(name)
             result.which_regex = [cur_regex_name]
-	    if cur_regex_name[:3] == "doc":
-               result.is_Documentary = True
+            
+            if cur_regex_name.startswith("doc"):
+                result.is_Documentary = True
             
             named_groups = match.groupdict().keys()
 
@@ -101,6 +103,8 @@ class NameParser(object):
                 if cur_regex_name == 'bare' and tmp_season in (19,20):
                     continue
                 result.season_number = tmp_season
+            elif result.is_Documentary:
+                result.season_number = 1
             
             if 'ep_num' in named_groups:
                 ep_num = self._convert_number(match.group('ep_num'))
@@ -230,6 +234,7 @@ class NameParser(object):
         final_result.series_name = self._combine_results(dir_name_result, file_name_result, 'series_name')
         final_result.extra_info = self._combine_results(dir_name_result, file_name_result, 'extra_info')
         final_result.release_group = self._combine_results(dir_name_result, file_name_result, 'release_group')
+        final_result.is_Documentary = self._combine_results(dir_name_result, file_name_result, 'is_Documentary')
 
         final_result.which_regex = []
         if final_result == file_name_result:
@@ -242,6 +247,25 @@ class NameParser(object):
             if dir_name_result:
                 final_result.which_regex += dir_name_result.which_regex
 
+        # if there's no useful info in it then we try the naming overrides
+        if final_result.season_number == None and not final_result.episode_numbers and final_result.air_date == None and not final_result.series_name:
+            # TODO: check naming overrides, if not there add
+            x = invalidNames.findFile(base_file_name)
+            # overrrides override
+            if x["showname"]:
+                final_result.series_name = x["showname"] 
+            if x["season"]:
+                try:
+                    final_result.season_number = int(x["season"])
+                except:
+                    pass
+            if x["episode"]:
+                try:
+                    en = [ int(r) for r in x["episode"].split(",")]
+                    final_result.episode_numbers = en
+                except:
+                    pass
+                
         # if there's no useful info in it then raise an exception
         if final_result.season_number == None and not final_result.episode_numbers and final_result.air_date == None and not final_result.series_name:
             raise InvalidNameException("Unable to parse "+name.encode(sickbeard.SYS_ENCODING))

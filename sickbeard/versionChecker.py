@@ -19,7 +19,7 @@
 import sickbeard
 from sickbeard import version, ui
 from sickbeard import logger
-from sickbeard import scene_exceptions
+from sickbeard import scene_exceptions, namePrefix
 from sickbeard.exceptions import ex
 
 import os, platform, shutil
@@ -52,6 +52,8 @@ class CheckVersion():
         
         # refresh scene exceptions too
         scene_exceptions.retrieve_exceptions()
+        # load prefixes
+        namePrefix.load(os.path.join(sickbeard.DATA_DIR,"prefixes.txt"))
 
     def find_install_type(self):
         """

@@ -124,6 +124,8 @@ class NewznabProvider(generic.NZBProvider):
 
             params['season'] = date_str.partition('-')[0]
             params['ep'] = date_str.partition('-')[2].replace('-', '/')
+        elif "Documentary" in ep_obj.show.genre:
+            params['q'] = helpers.sanitizeSceneName(ep_obj.name).replace('.', '_')
         else:
             params['season'] = ep_obj.season
             params['ep'] = ep_obj.episode

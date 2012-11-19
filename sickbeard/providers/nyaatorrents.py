@@ -26,6 +26,7 @@ import sickbeard
 import generic
 
 from sickbeard import classes, show_name_helpers, helpers
+from sickbeard.name_parser import parser
 
 from sickbeard import exceptions, logger, db
 from sickbeard.common import *
@@ -183,9 +184,9 @@ class NyaaProvider(generic.TorrentProvider):
 
             # parse the file name
             try:
-                myParser = NameParser()
+                myParser = parser.NameParser()
                 parse_result = myParser.parse(title)
-            except InvalidNameException:
+            except parser.InvalidNameException:
                 logger.log(u"Unable to parse the filename "+title+" into a valid episode", logger.WARNING)
                 continue
 

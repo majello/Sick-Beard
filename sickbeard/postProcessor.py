@@ -36,6 +36,7 @@ from sickbeard import logger
 from sickbeard import notifiers
 from sickbeard import show_name_helpers
 from sickbeard import scene_exceptions
+from sickbeard import namePrefix
 
 from sickbeard import encodingKludge as ek
 from sickbeard.exceptions import ex
@@ -374,6 +375,8 @@ class PostProcessor(object):
     
         # do a scene reverse-lookup to get a list of all possible names
         name_list = show_name_helpers.sceneToNormalShowNames(parse_result.series_name)
+        if parse_result.is_Documentary:
+            name_list = name_list + namePrefix.makeNames(parse_result.series_name,["doc"])
 
         if not name_list:
             return (None, season, episodes)

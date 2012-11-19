@@ -41,6 +41,7 @@ from sickbeard import search_queue
 from sickbeard import image_cache
 from sickbeard import naming
 from sickbeard import scene_exceptions
+from sickbeard import invalidNames
 
 from sickbeard.providers import newznab
 from sickbeard.common import Quality, Overview, statusStrings
@@ -146,9 +147,10 @@ def _getEpisode(show, season, episode):
     return epObj
 
 ManageMenu = [
-    { 'title': 'Backlog Overview',          'path': 'manage/backlogOverview' },
-    { 'title': 'Manage Searches',           'path': 'manage/manageSearches'  },
-    { 'title': 'Episode Status Management', 'path': 'manage/episodeStatuses' },
+    { 'title': 'Backlog Overview',          'path': 'manage/backlogOverview/' },
+    { 'title': 'Manage Searches',           'path': 'manage/manageSearches/'  },
+    { 'title': 'Episode Status Management', 'path': 'manage/episodeStatuses/' },
+    { 'title': 'File Name Exceptions',      'path': 'manage/nameExceptions/'  },
 ]
 
 class ManageSearches:
@@ -356,6 +358,50 @@ class Manage:
 
         return _munge(t)
 
+    @cherrypy.expose
+    def nameExceptions(self):
+        t = PageTemplate(file="manage_nameExceptions.tmpl")
+        slist = [(-1,"")]
+        for curShow in sickbeard.showList:
+            slist += [(curShow.tvdbid,curShow.name)]
+        t.show_list = slist
+        exlist = invalidNames.get()
+        t.filenames = exlist
+        return _munge(t)
+    
+    @cherrypy.expose
+    def nameExceptionsSubmit(self,**params):
+        u = {}
+        for pk in params.keys():
+            val = params[pk]
+            if pk.startswith("episode-"):
+                num = pk.split("-")[1]
+                if num in u.keys():
+                    u[num]["episode"] = val
+                else:
+                    u[num] = {"episode":val} 
+            if pk.startswith("season-"):
+                num = pk.split("-")[1]
+                if num in u.keys():
+                    u[num]["season"] = val
+                else:
+                    u[num] = {"season":val} 
+            if pk.startswith("showname-"):
+                num = pk.split("-")[1]
+                if num in u.keys():
+                    u[num]["showname"] = val
+                else:
+                    u[num] = {"showname":val} 
+            if pk.startswith("filename-"):
+                num = pk.split("-")[1]
+                if num in u.keys():
+                    u[num]["filename"] = val
+                else:
+                    u[num] = {"filename":val}
+        invalidNames.update([u[k] for k in u.keys()]) 
+        redirect("/manage/nameExceptions/")
+        
+        
     @cherrypy.expose
     def massEdit(self, toEdit=None):
 
