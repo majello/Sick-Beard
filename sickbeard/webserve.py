@@ -2730,6 +2730,8 @@ class Home:
     @cherrypy.expose
     def testRename(self, show=None):
 
+        import operator
+
         if show == None:
             return _genericMessage("Error", "You must specify a show")
 
@@ -2758,9 +2760,15 @@ class Home:
                 else:
                     ep_obj_rename_list.append(cur_ep_obj)
 
-            if ep_obj_rename_list:
-                # present season DESC episode DESC on screen
-                ep_obj_rename_list.reverse()
+        if ep_obj_rename_list:
+            # present season DESC episode DESC on screen
+            ep_obj_rename_list.reverse()
+            ep_obj_rename_set = set(ep_obj_rename_list)
+            try:
+                sorter = lambda info: "{:02d}-{:02d}".format(info.season,info.episode)
+                ep_obj_rename_list = sorted(ep_obj_rename_set,key=sorter)
+            except Exception as e:
+                print("Unable to sort: %s" % e)
 
         t = PageTemplate(file="testRename.tmpl")
         t.submenu = [{'title': 'Edit', 'path': 'home/editShow?show=%d' % showObj.tvdbid}]
