@@ -38,6 +38,7 @@ from sickbeard.exceptions import ex
 from sickbeard import tvrage
 from sickbeard import image_cache
 from sickbeard import postProcessor
+from sickbeard import invalidNames
 
 from sickbeard import encodingKludge as ek
 
@@ -1689,7 +1690,8 @@ class TVEpisode(object):
         Renames an episode file and all related files to the location and filename as specified
         in the naming settings.
         """
-
+        orig_name = self.location
+        
         if not ek.ek(os.path.isfile, self.location):
             logger.log(u"Can't perform rename on " + self.location + " when it doesn't exist, skipping", logger.WARNING)
             return
@@ -1738,3 +1740,6 @@ class TVEpisode(object):
             self.saveToDB()
             for relEp in self.relatedEps:
                 relEp.saveToDB()
+                
+        # remove from name exceptions
+        invalidNames.remove(orig_name)

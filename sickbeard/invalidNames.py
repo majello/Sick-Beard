@@ -17,6 +17,7 @@
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
 from sickbeard import db
+import os
 
 def findFile(filename, show = None,snum = None, epnum = None):
     # check if file in table
@@ -54,3 +55,11 @@ def update(values):
                 myDB.action("DELETE FROM file_exceptions where filename = ?",[v["filename"]])
         except:
             pass
+        
+def remove(full_filename):
+    # first strip path
+    s1 = os.path.split(full_filename)
+    s2 = os.path.splitext(s1[1])
+    myDB= db.DBConnection()
+    myDB.action("DELETE FROM file_exceptions where filename = ?",[s2[0]])    
+    return
