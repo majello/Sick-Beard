@@ -398,6 +398,16 @@ class Manage:
                     u[num]["filename"] = val
                 else:
                     u[num] = {"filename":val}
+            if pk.startswith("delete-"):
+                num = pk.split("-")[1]
+                if val=="on":
+                    val = True
+                else:
+                    val = False
+                if num in u.keys():
+                    u[num]["delete"] = val
+                else:
+                    u[num] = {"delete":val}
         invalidNames.update([u[k] for k in u.keys()]) 
         redirect("/manage/nameExceptions/")
         

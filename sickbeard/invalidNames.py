@@ -48,6 +48,9 @@ def update(values):
     myDB= db.DBConnection()
     for v in values:
         try:
-            myDB.action("INSERT OR REPLACE INTO file_exceptions (filename, showname,season,episode) VALUES (?,?,?,?)",[v["filename"],v["showname"],v["season"],v["episode"]])
+            if v["delete"] == False:
+                myDB.action("INSERT OR REPLACE INTO file_exceptions (filename, showname,season,episode) VALUES (?,?,?,?)",[v["filename"],v["showname"],v["season"],v["episode"]])
+            else:
+                myDB.action("DELETE FROM file_exceptions where filename = ?",[v["filename"]])
         except:
             pass

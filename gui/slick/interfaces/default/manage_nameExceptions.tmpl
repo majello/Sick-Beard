@@ -21,6 +21,7 @@
 <table id="nameExceptionTable" class="sickbeardTable" cellspacing="1" border="0" cellpadding="0">
   <thead>
     <tr>
+        <th>Delete</th>
     	<th>Filename</th>
     	<th>Show Name</th>
     	<th>Season Number</th>
@@ -34,6 +35,7 @@ curFile = self.filenames[curNum]
 test=1
 %>
 	<tr>
+        <td><input type="checkbox" name="delete-${curNum}"></td>
 		<td><input type="text" name="filename-${curNum}" value="${curFile['filename']}" size=60></td>
 		<td>
 			<select name="showname-${curNum}">
@@ -56,7 +58,7 @@ else:
   </tbody>
   <tfoot>
 	<tr>
-	    <td rowspan="1" colspan="4" class="align-right alt">
+	    <td rowspan="1" colspan="5" class="align-right alt">
 	    	<input type="submit" class="btn btn-primary" value="Submit" id="submitNameExceptions" />
 	    </td>
 	</tr>
