@@ -101,6 +101,14 @@
                             </label>
                         </div>
 
+                        <div class="field-pair">
+                            <input type="checkbox" name="always_rename_episodes" id="always_rename_episodes" #if $sickbeard.AUTO_RENAME == True then "checked=\"checked\"" else ""# />
+                            <label class="clearfix" for="always_rename_episodes">
+                                <span class="component-title">Always Rename Episodes</span>
+                                <span class="component-desc">Rename episode using the naming settings when encountering a file in the library?</span>
+                            </label>
+                        </div>
+
                         <div class="clearfix"></div>
                         <input type="submit" class="btn config_submitter" value="Save Changes" /><br/>
 

@@ -309,7 +309,7 @@ COMING_EPS_LAYOUT = None
 COMING_EPS_DISPLAY_PAUSED = None
 COMING_EPS_SORT = None
 
-AUTO_RENAME = None
+AUTO_RENAME = False
 
 EXTRA_SCRIPTS = []
 
@@ -702,7 +702,7 @@ def initialize(consoleLogging=True):
         COMING_EPS_DISPLAY_PAUSED = bool(check_setting_int(CFG, 'GUI', 'coming_eps_display_paused', 0))
         COMING_EPS_SORT = check_setting_str(CFG, 'GUI', 'coming_eps_sort', 'date')
 
-        AUTO_RENAME = check_setting_str(CFG,"General","auto_rename","0")
+        AUTO_RENAME = bool(check_setting_int(CFG,"General","auto_rename",0))
 
         newznabData = check_setting_str(CFG, 'Newznab', 'newznab_data', '')
         newznabProviderList = providers.getNewznabProviderList(newznabData)
@@ -1212,7 +1212,7 @@ def save_config():
     new_config['GUI']['coming_eps_display_paused'] = int(COMING_EPS_DISPLAY_PAUSED)
     new_config['GUI']['coming_eps_sort'] = COMING_EPS_SORT
 
-    new_config['General']['auto_rename'] = AUTO_RENAME
+    new_config['General']['auto_rename'] = int(AUTO_RENAME)
 
     new_config['General']['config_version'] = CONFIG_VERSION
 

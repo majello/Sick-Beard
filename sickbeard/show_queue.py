@@ -335,7 +335,7 @@ class QueueItemRefresh(ShowQueueItem):
         self.show.writeMetadata()
         self.show.populateCache()
 
-        if sickbeard.AUTO_RENAME == "1":
+        if sickbeard.AUTO_RENAME == True:
             sickbeard.showQueueScheduler.action.renameShow(self.show, True) #@UndefinedVariable
         
         self.inProgress = False
