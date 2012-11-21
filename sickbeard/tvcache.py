@@ -329,7 +329,7 @@ class TVCache():
         #return filter(lambda x: x['tvdbid'] != 0, myDB.select(sql))
         return myDB.select(sql)
 
-    def findNeededEpisodes(self, episode = None, manualSearch=False):
+    def findNeededEpisodes(self, episode = None, manualSearch=False,source="Unknown"): #
         neededEps = {}
 
         if episode:
@@ -346,7 +346,7 @@ class TVCache():
         for curResult in sqlResults:
 
             # skip non-tv crap (but allow them for Newzbin cause we assume it's filtered well)
-            if self.providerID != 'newzbin' and not show_name_helpers.filterBadReleases(curResult["name"]):
+            if self.providerID != 'newzbin' and not show_name_helpers.filterBadReleases(curResult["name"],source=source):
                 continue
 
             # get the show object, or if it's not one of our shows then ignore it

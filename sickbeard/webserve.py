@@ -372,6 +372,7 @@ class Manage:
     @cherrypy.expose
     def nameExceptionsSubmit(self,**params):
         if params["action"] == "Parse Names":
+            invalidNames.parse()
             pass
         if params["action"] == "Expunge":
             invalidNames.expunge()

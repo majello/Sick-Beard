@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
-from sickbeard import db
+from sickbeard import db,logger,name_parser
+
 import os,time
 
 def findFile(filename, show = None,snum = None, epnum = None,source="Unknown"):
@@ -26,17 +27,30 @@ def findFile(filename, show = None,snum = None, epnum = None,source="Unknown"):
     showname = None
     season = None
     episode = None
+    if source.lower() == "unknown":
+        logger.log("unknown source for %s" % (filename))
     if ne == []:
         # if not, insert
-        if show == None: show = ""
-        if snum == None: snum = ""
-        if epnum == None: epnum = ""
-        myDB.action("INSERT INTO file_exceptions (filename, showname,season,episode,source,stamp) VALUES (?,?,?,?,?,?)",[filename,show,snum,epnum,source,int(time.time())])
+        if show == None or show == "None": 
+            show = ""
+        if snum == None or snum == "None": 
+            snum = ""
+        if epnum == None or epnum == "None": 
+            epnum = []
+        episodes = ",".join([str(x) for x in epnum])
+        myDB.action("INSERT INTO file_exceptions (filename, showname,season,episode,source,stamp) VALUES (?,?,?,?,?,?)",[filename,show,snum,episodes,source,int(time.time())])
     else:
         # if it is, see if complete
         showname = ne[0]["showname"]
-        season = ne[0]["season"]
+        try:
+            season = int(ne[0]["season"])
+        except:
+            season = None
         episode = ne[0]["episode"]
+        try:
+            episode = [int(e) for e in episode.split(",")]
+        except:
+            episode = None
     # return show,season,episode
     return {"showname": showname,"season": season,"episode":episode}
 
@@ -72,12 +86,17 @@ def update(values):
         except:
             pass
         
-def remove(full_filename):
+def remove(full_filename,reason="unknown reason"):
     # first strip path
     s1 = os.path.split(full_filename)
     s2 = os.path.splitext(s1[1])
-    myDB= db.DBConnection()
-    myDB.action("DELETE FROM file_exceptions where filename = ?",[s2[0]])    
+    try:
+        myDB= db.DBConnection()
+        myDB.action("DELETE FROM file_exceptions where filename = ?",[s2[0]])
+    except:
+        raise
+    else:
+        logger.log("Removed %s from name exceptions due to %s" % (s2[0],reason))    
     return
 
 def expunge():
@@ -89,5 +108,19 @@ def expunge():
     myDB.action('UPDATE file_exceptions SET episode="" WHERE episode = "None"')
     # see if we have old RSS entries
     # TODO; make expiry time configurable, currently set to 5 minutes
-    myDB.action('DELETE FROM file_exceptions WHERE (source = "RSS" OR source = "Unknown") AND stamp < ?',[int(time.time()-5*60)])
+    myDB.action('DELETE FROM file_exceptions WHERE (source = "RSS" AND stamp < ?) OR source = "Unknown"',[int(time.time()-5*60)])
     
+def parse():
+    myDB = db.DBConnection()
+    names = myDB.action("SELECT filename FROM file_exceptions").fetchall()
+    for r in names:
+        filename = r["filename"]
+        np = name_parser.parser.NameParser(filename)
+        try:
+            pr = np.parse(filename,fullname=False)
+            myDB.action("UPDATE file_exceptions SET showname = ?, season = ?, episode = ? WHERE filename = ?", [pr.series_name,pr.season_number,",".join([str(x) for x in pr.episode_numbers]),filename])
+            logger.log(u"Parsed filename: %s" % filename)
+        except name_parser.parser.InvalidNameException, e:
+            logger.log(u"Unable to get parse filename %s: %s" % (filename,e))
+
+        

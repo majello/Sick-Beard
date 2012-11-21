@@ -440,7 +440,13 @@ class TVShow(object):
         except InvalidNameException:
             logger.log(u"Unable to parse the filename "+file+" into a valid episode", logger.ERROR)
             return None
-
+        
+        if parse_result.series_name != self.name and parse_result.series_name != "" and parse_result.series_name != None:
+            # TODO: send to file exceptions and mark for move
+            logger.log("parse_result: "+str(parse_result))
+            logger.log(u"File %s (%s), does not belong to %s" % (file,parse_result.series_name,self.name), logger.ERROR)
+            return None
+        
         if len(parse_result.episode_numbers) == 0 and not parse_result.air_by_date:
             logger.log("parse_result: "+str(parse_result))
             logger.log(u"No episode number found in "+file+", ignoring it", logger.ERROR)
@@ -1460,7 +1466,7 @@ class TVEpisode(object):
             np = NameParser(name)
 
             try:
-                parse_result = np.parse(name)
+                parse_result = np.parse(name,isFile=False)
             except InvalidNameException, e:
                 logger.log(u"Unable to get parse release_group: "+ex(e), logger.DEBUG)
                 return ''
@@ -1742,4 +1748,4 @@ class TVEpisode(object):
                 relEp.saveToDB()
                 
         # remove from name exceptions
-        invalidNames.remove(orig_name)
+        invalidNames.remove(orig_name,"file rename by refresh")

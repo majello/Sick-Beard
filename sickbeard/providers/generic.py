@@ -177,7 +177,7 @@ class GenericProvider:
 
     def searchRSS(self):
         self.cache.updateCache(source="RSS")
-        return self.cache.findNeededEpisodes()
+        return self.cache.findNeededEpisodes(source="RSS") 
 
     def getQuality(self, item):
         """

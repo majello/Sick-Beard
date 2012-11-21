@@ -24,11 +24,10 @@ import regexes
 
 import sickbeard
 
-from sickbeard import logger
+from sickbeard import logger, invalidNames
+from sickbeard.name_parser import episodeParser
 
-import subprocess
-
-from sickbeard import invalidNames
+# import subprocess
 
 class NameParser(object):
     def __init__(self, file_name=True):
@@ -195,7 +194,7 @@ class NameParser(object):
 
         return int(number)
 
-    def parse(self, name, source="Unknown"):
+    def parse(self, name, source="Unknown",fullname=True,isFile=True):
         
         name = self._unicodify(name)
         
@@ -205,9 +204,13 @@ class NameParser(object):
 
         # break it into parts if there are any (dirname, file name, extension)
         dir_name, file_name = os.path.split(name)
-        ext_match = re.match('(.*)\.\w{3,4}$', file_name)
-        if ext_match and self.file_name:
-            base_file_name = ext_match.group(1)
+        
+        if fullname:
+            ext_match = re.match('(.*)\.\w{3,4}$', file_name)
+            if ext_match and self.file_name:
+                base_file_name = ext_match.group(1)
+            else:
+                base_file_name = file_name
         else:
             base_file_name = file_name
         
@@ -247,27 +250,25 @@ class NameParser(object):
             if dir_name_result:
                 final_result.which_regex += dir_name_result.which_regex
 
-        # if there's no useful info in it then we try the naming overrides
-        if final_result.season_number == None and not final_result.episode_numbers and final_result.air_date == None and not final_result.series_name:
-            # TODO: check naming overrides, if not there add
-            x = invalidNames.findFile(base_file_name,show=final_result.series_name,snum=str(final_result.season_number),epnum=str(final_result.episode_numbers),source=source)
+        # if there's no useful info at all then we try the naming overrides, but only if we actually get a filename, not other parts
+        if isFile and (final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None):
+            x = invalidNames.findFile(base_file_name,show=final_result.series_name,snum=final_result.season_number,epnum=final_result.episode_numbers,source=source)
             # overrrides override
-            if x["showname"]:
-                final_result.series_name = x["showname"] 
-            if x["season"]:
-                try:
-                    final_result.season_number = int(x["season"])
-                except:
-                    pass
-            if x["episode"]:
-                try:
-                    en = [ int(r) for r in x["episode"].split(",")]
-                    final_result.episode_numbers = en
-                except:
-                    pass
+            if x["showname"] != None and x["showname"] != "": final_result.series_name = x["showname"] 
+            if x["season"] != None: final_result.season_number = x["season"]
+            if x["episode"] != None: final_result.episode_numbers = x["episode"]
                 
-        # if there's no useful info in it then raise an exception
-        if final_result.season_number == None and not final_result.episode_numbers and final_result.air_date == None and not final_result.series_name:
+        # if there's no useful info so far, we check the name based resolution, but only if we actually get a filename, not other parts
+        if isFile and (final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None):
+            episode = episodeParser.episode_parser.match(base_file_name)
+            if episode != None:
+                final_result.series_name = episode.show.name
+                final_result.episode_numbers = [episode.episode] + getattr(episode,"relatedEps",[])# TODO: support multiple episodes in one file
+                final_result.season_number = episode.season
+                
+        # if everything fails then raise an exception
+        # if final_result.season_number == None and not final_result.episode_numbers and final_result.air_date == None and not final_result.series_name:
+        if final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None:
             raise InvalidNameException("Unable to parse "+name.encode(sickbeard.SYS_ENCODING))
 
         name_parser_cache.add(name, final_result)
