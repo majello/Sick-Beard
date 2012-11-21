@@ -242,7 +242,7 @@ class TVShow(object):
 
             logger.log(str(self.tvdbid) + ": Creating episode from " + mediaFile, logger.DEBUG)
             try:
-                curEpisode = self.makeEpFromFile(ek.ek(os.path.join, self._location, mediaFile))
+                curEpisode = self.makeEpFromFile(ek.ek(os.path.join, self._location, mediaFile),"Filesystem")
             except (exceptions.ShowNotFoundException, exceptions.EpisodeNotFoundException), e:
                 logger.log(u"Episode "+mediaFile+" returned an exception: "+ex(e), logger.ERROR)
                 continue
@@ -426,7 +426,7 @@ class TVShow(object):
 
 
     # make a TVEpisode object from a media file
-    def makeEpFromFile(self, file):
+    def makeEpFromFile(self, file, source="Unknown"):
 
         if not ek.ek(os.path.isfile, file):
             logger.log(str(self.tvdbid) + ": That isn't even a real file dude... " + file)
@@ -436,7 +436,7 @@ class TVShow(object):
 
         try:
             myParser = NameParser()
-            parse_result = myParser.parse(file)
+            parse_result = myParser.parse(file,source)
         except InvalidNameException:
             logger.log(u"Unable to parse the filename "+file+" into a valid episode", logger.ERROR)
             return None

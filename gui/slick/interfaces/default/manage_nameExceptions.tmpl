@@ -26,6 +26,8 @@
     	<th>Show Name</th>
     	<th>Season Number</th>
     	<th>Episode Number(s)</th>
+        <th>Source</th>
+        <th>Age</th>
 	</tr>
   </thead>
   <tbody>
@@ -36,7 +38,7 @@ test=1
 %>
 	<tr>
         <td><input type="checkbox" name="delete-${curNum}"></td>
-		<td><input type="text" name="filename-${curNum}" value="${curFile['filename']}" size=60></td>
+		<td class="nowrap"><input type="hidden" name="filename-${curNum}" value="${curFile['filename']}" size=60>${curFile['filename']}</td>
 		<td>
 			<select name="showname-${curNum}">
 			#for sh in $show_list:
@@ -53,14 +55,18 @@ else:
 		</td>
 		<td><input type="text" name="season-${curNum}" value="${curFile['season']}" size=6></td>
 		<td><input type="text" name="episode-${curNum}" value="${curFile['episode']}" size=10></td>
+        <td>${curFile['source']}</td>
+        <td class="nowrap">${curFile['age']}</td>
 	</tr>
 #end for  	
   </tbody>
   <tfoot>
 	<tr>
-	    <td rowspan="1" colspan="5" class="align-right alt">
-	    	<input type="submit" class="btn btn-primary" value="Submit" id="submitNameExceptions" />
-	    </td>
+      <td rowspan="1" colspan="7" class="align-right alt">
+        <input type="submit" class="btn" value="Expunge" name="action" id="Expunge" />
+        <input type="submit" class="btn" value="Parse Names" name="action" id="TryNameParser" />
+      	<input type="submit" class="btn btn-primary" value="Submit" name="action" id="submitNameExceptions" />
+      </td>
 	</tr>
   </tfoot>
 </table>

@@ -176,7 +176,7 @@ class GenericProvider:
         return True
 
     def searchRSS(self):
-        self.cache.updateCache()
+        self.cache.updateCache(source="RSS")
         return self.cache.findNeededEpisodes()
 
     def getQuality(self, item):
@@ -224,7 +224,7 @@ class GenericProvider:
 
         logger.log(u"Searching "+self.name+" for " + episode.prettyName())
 
-        self.cache.updateCache()
+        self.cache.updateCache(source="Episode Search")
         results = self.cache.searchCache(episode, manualSearch)
         logger.log(u"Cache results: "+str(results), logger.DEBUG)
 

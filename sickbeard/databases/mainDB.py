@@ -568,3 +568,11 @@ class AddShowToSpecializedNames (NamePrefixes):
     def execute(self):
         self.addColumn("file_exceptions", "showname", "TEXT", "")
 
+class AddShowToSpecializedNamesInfo (AddShowToSpecializedNames):
+    def test(self):
+        return self.hasColumn("file_exceptions", "source")
+
+    def execute(self):
+        self.addColumn("file_exceptions", "source", "TEXT", "")
+        self.addColumn("file_exceptions", "stamp", "INTEGER", 0)
+

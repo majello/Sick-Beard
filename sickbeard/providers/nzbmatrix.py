@@ -52,16 +52,9 @@ class NZBMatrixProvider(generic.NZBProvider):
         return [' '.join(sceneSearchStrings)]
 
     def _get_episode_search_strings(self, ep_obj):
-
-        if "documentary" in ep_obj.show.genre.lower():
-            # TODO: build reasonable seach string
-            sceneSearchStrings = [helpers.sanitizeSceneName(ep_obj.name)]
-            sceneSearchStrings += [helpers.sanitizeSceneName(ep_obj.show.network+" "+ep_obj)] 
-            return sceneSearchStrings
-        else:
-            sceneSearchStrings = set(show_name_helpers.makeSceneSearchString(ep_obj))
-            # search for all show names and episode numbers like ("a","b","c") in a single search
-            return ['("' + '","'.join(sceneSearchStrings) + '")']
+        sceneSearchStrings = set(show_name_helpers.makeSceneSearchString(ep_obj))
+        # search for all show names and episode numbers like ("a","b","c") in a single search
+        return ['("' + '","'.join(sceneSearchStrings) + '")']
 
     def _doSearch(self, curString, quotes=False, show=None):
 

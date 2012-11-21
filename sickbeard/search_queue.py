@@ -73,7 +73,7 @@ class SearchQueue(generic_queue.GenericQueue):
             generic_queue.GenericQueue.add_item(self, item)
         elif isinstance(item, ManualSearchQueueItem) and not self.is_ep_in_queue(item.ep_obj):
             generic_queue.GenericQueue.add_item(self, item)
-        elif isinstance(item, DocumentaryQueueItem) and not self.is_ep_in_queue(item.ep_obj):
+        elif isinstance(item, EpisodeQueueItem) and not self.is_ep_in_queue(item.ep_obj):
             generic_queue.GenericQueue.add_item(self, item)
         else:
             logger.log(u"Not adding item, it's already in the queue", logger.DEBUG)
@@ -235,7 +235,7 @@ class BacklogQueueItem(generic_queue.QueueItem):
 
         return wantSeason
 
-class DocumentaryQueueItem(generic_queue.QueueItem):
+class EpisodeQueueItem(generic_queue.QueueItem):
     def __init__(self, ep_obj):
         generic_queue.QueueItem.__init__(self, 'Documentary Search', MANUAL_SEARCH)
         self.priority = generic_queue.QueuePriorities.LOW

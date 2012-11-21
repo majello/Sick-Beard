@@ -65,6 +65,22 @@
                                 <span class="component-desc">Age limit in days for usenet articles to be used. (eg. 500)</span>
                             </label>
                         </div>
+                        
+                        <div class="field-pair">
+                            <input type="checkbox" name="doc_use_names" id="doc_use_names" #if $sickbeard.DOC_USE_NAMES == True then "checked=\"checked\"" else ""# />
+                            <label class="clearfix" for="doc_use_names">
+                                <span class="component-title">Use episode names for Documentaries</span>
+                                <span class="component-desc">For documentaries, when identifying episodes, use episode names?</span>
+                            </label>
+                        </div>
+                        
+                        <div class="field-pair">
+                            <input type="checkbox" name="spec_use_names" id="spec_use_names" #if $sickbeard.SPEC_USE_NAMES == True then "checked=\"checked\"" else ""# />
+                            <label class="clearfix" for="spec_use_names">
+                                <span class="component-title">Use episode names for Specials</span>
+                                <span class="component-desc">For specials (season 0), when identifying episodes, use episode names?</span>
+                            </label>
+                        </div>                        
 
                         <div class="clearfix"></div>
                         <input type="submit" class="btn config_submitter" value="Save Changes" /><br/>

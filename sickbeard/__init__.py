@@ -309,7 +309,10 @@ COMING_EPS_LAYOUT = None
 COMING_EPS_DISPLAY_PAUSED = None
 COMING_EPS_SORT = None
 
-AUTO_RENAME = False
+# Doc Branch Features
+AUTO_RENAME = False     # Automatically Rename during library scan
+DOC_USE_NAMES=False     # Use episode name based parser for documentaries
+SPEC_USE_NAMES=False    # Use episode name based parser for specials (season 0)
 
 EXTRA_SCRIPTS = []
 
@@ -360,7 +363,7 @@ def initialize(consoleLogging=True):
                 USE_BANNER, USE_LISTVIEW, METADATA_XBMC, METADATA_MEDIABROWSER, METADATA_PS3, METADATA_SYNOLOGY, metadata_provider_dict, \
                 NEWZBIN, NEWZBIN_USERNAME, NEWZBIN_PASSWORD, GIT_PATH, MOVE_ASSOCIATED_FILES, \
                 GUI_NAME, COMING_EPS_LAYOUT, COMING_EPS_SORT, COMING_EPS_DISPLAY_PAUSED, METADATA_WDTV, METADATA_TIVO, IGNORE_WORDS, CREATE_MISSING_SHOW_DIRS, \
-                ADD_SHOWS_WO_DIR, AUTO_RENAME
+                ADD_SHOWS_WO_DIR, AUTO_RENAME, DOC_USE_NAMES,SPEC_USE_NAMES
 
         if __INITIALIZED__:
             return False
@@ -703,6 +706,8 @@ def initialize(consoleLogging=True):
         COMING_EPS_SORT = check_setting_str(CFG, 'GUI', 'coming_eps_sort', 'date')
 
         AUTO_RENAME = bool(check_setting_int(CFG,"General","auto_rename",0))
+        DOC_USE_NAMES = bool(check_setting_int(CFG,"General","documentaries_use_names",0))
+        SPEC_USE_NAMES = bool(check_setting_int(CFG,"General","specials_use_names",0))
 
         newznabData = check_setting_str(CFG, 'Newznab', 'newznab_data', '')
         newznabProviderList = providers.getNewznabProviderList(newznabData)
@@ -1213,6 +1218,8 @@ def save_config():
     new_config['GUI']['coming_eps_sort'] = COMING_EPS_SORT
 
     new_config['General']['auto_rename'] = int(AUTO_RENAME)
+    new_config['General']['documentaries_use_names'] = int(DOC_USE_NAMES)
+    new_config['General']['specials_use_names'] = int(SPEC_USE_NAMES)
 
     new_config['General']['config_version'] = CONFIG_VERSION
 

@@ -371,44 +371,55 @@ class Manage:
     
     @cherrypy.expose
     def nameExceptionsSubmit(self,**params):
-        u = {}
-        for pk in params.keys():
-            val = params[pk]
-            if pk.startswith("episode-"):
-                num = pk.split("-")[1]
-                if num in u.keys():
-                    u[num]["episode"] = val
-                else:
-                    u[num] = {"episode":val} 
-            if pk.startswith("season-"):
-                num = pk.split("-")[1]
-                if num in u.keys():
-                    u[num]["season"] = val
-                else:
-                    u[num] = {"season":val} 
-            if pk.startswith("showname-"):
-                num = pk.split("-")[1]
-                if num in u.keys():
-                    u[num]["showname"] = val
-                else:
-                    u[num] = {"showname":val} 
-            if pk.startswith("filename-"):
-                num = pk.split("-")[1]
-                if num in u.keys():
-                    u[num]["filename"] = val
-                else:
-                    u[num] = {"filename":val}
-            if pk.startswith("delete-"):
-                num = pk.split("-")[1]
-                if val=="on":
-                    val = True
-                else:
-                    val = False
-                if num in u.keys():
-                    u[num]["delete"] = val
-                else:
-                    u[num] = {"delete":val}
-        invalidNames.update([u[k] for k in u.keys()]) 
+        if params["action"] == "Parse Names":
+            pass
+        if params["action"] == "Expunge":
+            invalidNames.expunge()
+        if params["action"] == "Submit":
+            u = {}
+            for pk in params.keys():
+                val = params[pk]
+                if pk.startswith("episode-"):
+                    num = pk.split("-")[1]
+                    if num in u.keys():
+                        u[num]["episode"] = val
+                    else:
+                        u[num] = {"episode":val} 
+                if pk.startswith("season-"):
+                    num = pk.split("-")[1]
+                    if num in u.keys():
+                        u[num]["season"] = val
+                    else:
+                        u[num] = {"season":val} 
+                if pk.startswith("showname-"):
+                    num = pk.split("-")[1]
+                    if num in u.keys():
+                        u[num]["showname"] = val
+                    else:
+                        u[num] = {"showname":val} 
+                if pk.startswith("filename-"):
+                    num = pk.split("-")[1]
+                    if num in u.keys():
+                        u[num]["filename"] = val
+                    else:
+                        u[num] = {"filename":val}
+                if pk.startswith("delete-"):
+                    num = pk.split("-")[1]
+                    if val=="on":
+                        val = True
+                    else:
+                        val = False
+                    if num in u.keys():
+                        u[num]["delete"] = val
+                    else:
+                        u[num] = {"delete":val}
+            updates = []
+            for n in u.keys():
+                val = u[n]
+                if not "delete" in val.keys():
+                    val["delete"] = False
+                updates.append(val)
+            invalidNames.update(updates) 
         redirect("/manage/nameExceptions/")
         
         
@@ -831,7 +842,8 @@ class ConfigSearch:
     def saveSearch(self, use_nzbs=None, use_torrents=None, nzb_dir=None, sab_username=None, sab_password=None,
                        sab_apikey=None, sab_category=None, sab_host=None, nzbget_password=None, nzbget_category=None, nzbget_host=None,
                        nzb_method=None, torrent_method=None, usenet_retention=None, search_frequency=None, download_propers=None,
-                       torrent_dir=None, torrent_username=None, torrent_password=None, torrent_host=None, torrent_path=None, torrent_ratio=None, torrent_paused=None):
+                       torrent_dir=None, torrent_username=None, torrent_password=None, torrent_host=None, torrent_path=None, torrent_ratio=None, 
+                       torrent_paused=None,doc_use_names=None,spec_use_names=None):
 
 
         results = []
@@ -849,6 +861,16 @@ class ConfigSearch:
         else:
             download_propers = 0
 
+        if doc_use_names == "on":
+            doc_use_names = 1
+        else:
+            doc_use_names = 0
+
+        if spec_use_names == "on":
+            spec_use_names = 1
+        else:
+            spec_use_names = 0
+
         if use_nzbs == "on":
             use_nzbs = 1
         else:
@@ -861,6 +883,9 @@ class ConfigSearch:
 
         if usenet_retention == None:
             usenet_retention = 200
+
+        sickbeard.DOC_USE_NAMES = doc_use_names
+        sickbeard.SPEC_USE_NAMES = spec_use_names
 
         sickbeard.USE_NZBS = use_nzbs
         sickbeard.USE_TORRENTS = use_torrents

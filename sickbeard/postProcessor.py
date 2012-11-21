@@ -377,6 +377,7 @@ class PostProcessor(object):
         name_list = show_name_helpers.sceneToNormalShowNames(parse_result.series_name)
         if parse_result.is_Documentary:
             name_list = name_list + namePrefix.makeNames(parse_result.series_name,["doc"])
+        name_list = name_list + namePrefix.makeNames(parse_result.series_name,["all"])
 
         if not name_list:
             return (None, season, episodes)

@@ -195,7 +195,7 @@ class NameParser(object):
 
         return int(number)
 
-    def parse(self, name):
+    def parse(self, name, source="Unknown"):
         
         name = self._unicodify(name)
         
@@ -250,7 +250,7 @@ class NameParser(object):
         # if there's no useful info in it then we try the naming overrides
         if final_result.season_number == None and not final_result.episode_numbers and final_result.air_date == None and not final_result.series_name:
             # TODO: check naming overrides, if not there add
-            x = invalidNames.findFile(base_file_name)
+            x = invalidNames.findFile(base_file_name,show=final_result.series_name,snum=str(final_result.season_number),epnum=str(final_result.episode_numbers),source=source)
             # overrrides override
             if x["showname"]:
                 final_result.series_name = x["showname"] 
