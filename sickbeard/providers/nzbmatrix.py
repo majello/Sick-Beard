@@ -167,6 +167,10 @@ class NZBMatrixCache(tvcache.TVCache):
         if not urlArgs['maxage']:
             urlArgs['maxage'] = '0'
 
+        # watching the RSS feed for documentaries ony makes sense if name based search is on
+        if sickbeard.DOC_USE_NAMES:
+            urlArgs["subcat"] = urlArgs["subcat"] + ",53,9"
+
         url += urllib.urlencode(urlArgs)
 
         logger.log(u"NZBMatrix cache update URL: "+ url, logger.DEBUG)
