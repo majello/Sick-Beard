@@ -18,16 +18,16 @@
 
 <form name="nameExceptionForm" method="post" action="../nameExceptionsSubmit">
 
-<table id="nameExceptionTable" class="sickbeardTable" cellspacing="1" border="0" cellpadding="0">
+<table id="nameExceptionTable" class="sickbeardTable" style='table-layout:fixed' cellspacing="1" border="0" cellpadding="0">
   <thead>
     <tr>
-        <th>Delete</th>
-    	<th>Filename</th>
-    	<th>Show Name</th>
-    	<th>Season Number</th>
-    	<th>Episode Number(s)</th>
-        <th>Source</th>
-        <th>Age</th>
+        <th width="2%">Delete</th>
+    	<th width="38%">Filename</th>
+    	<th width="20%">Show Name</th>
+    	<th width="10%">Season Number</th>
+    	<th width="10%">Episode Number(s)</th>
+        <th width="10%">Source</th>
+        <th width="10%">Age</th>
 	</tr>
   </thead>
   <tbody>
@@ -38,9 +38,9 @@ test=1
 %>
 	<tr>
         <td><input type="checkbox" name="delete-${curNum}"></td>
-		<td class="nowrap"><input type="hidden" name="filename-${curNum}" value="${curFile['filename']}" size=60>${curFile['filename']}</td>
+		<td class="nowrap" style="overflow:hidden;border:4px"><input type="hidden" name="filename-${curNum}" value="${curFile['filename']}" size=60>${curFile['filename']}</td>
 		<td>
-			<select name="showname-${curNum}">
+			<select name="showname-${curNum}" style="width:100%">
 			#for sh in $show_list:
                 <!-- ${sh} -->
 <%
@@ -53,8 +53,8 @@ else:
 			#end for
 			</select>
 		</td>
-		<td><input type="text" name="season-${curNum}" value="${curFile['season']}" size=6></td>
-		<td><input type="text" name="episode-${curNum}" value="${curFile['episode']}" size=10></td>
+		<td><input type="text" name="season-${curNum}" value="${curFile['season']}" size=5></td>
+		<td><input type="text" name="episode-${curNum}" value="${curFile['episode']}" size=8></td>
         <td>${curFile['source']}</td>
         <td class="nowrap">${curFile['age']}</td>
 	</tr>

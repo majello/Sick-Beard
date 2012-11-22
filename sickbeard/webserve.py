@@ -2808,7 +2808,8 @@ class Home:
             ep_obj_rename_set = set(ep_obj_rename_list)
             try:
                 sorter = lambda info: "{:02d}-{:02d}".format(info.season,info.episode)
-                ep_obj_rename_list = sorted(ep_obj_rename_set,key=sorter)
+                ep_id = lambda ep: ep.episode
+                ep_obj_rename_list = [ x for x in sorted(ep_obj_rename_set,key=sorter) if x.relatedEps == [] or x.episode < min(x.relatedEps,key=ep_id).episode ]
             except Exception as e:
                 print("Unable to sort: %s" % e)
 
