@@ -170,6 +170,27 @@ def getURL (url, headers=[]):
 
     return result
 
+def findCertainEpisode(showlist,tvdbid):
+    myDB=db.DBConnection()
+    results = myDB.action("SELECT showid, season,episode FROM tv_episodes WHERE tvdbid = ?",[tvdbid]).fetchall()
+    if len(results) == 0:
+        return None
+    elif len(results) > 1:
+        # TODO: should have its own exception
+        raise MultipleShowObjectsException()
+    else:
+        showid = results[0]["showid"]
+        show = findCertainShow(showlist, showid)
+        if show == None:
+            return None
+        else:
+            # load the episode
+            episode = show.getEpisode(results[0]["season"],results[0]["episode"])
+            # and make sure it's populated
+            # TODO: check if load from DB is required
+            episode.loadFromDB(results[0]["season"],results[0]["episode"])
+            return episode
+
 def findCertainShow (showList, tvdbid):
     results = filter(lambda x: x.tvdbid == tvdbid, showList)
     if len(results) == 0:

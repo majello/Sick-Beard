@@ -37,6 +37,7 @@ from sickbeard import searchCurrent, searchBacklog, showUpdater, versionChecker,
 from sickbeard import helpers, db, exceptions, show_queue, search_queue, scheduler
 from sickbeard import logger
 from sickbeard import naming
+from sickbeard import invalidNames
 
 from common import SD, SKIPPED, NAMING_REPEAT
 
@@ -75,6 +76,7 @@ showQueueScheduler = None
 searchQueueScheduler = None
 properFinderScheduler = None
 autoPostProcesserScheduler = None
+nameExceptionScheduler = None
 
 showList = None
 loadingShowList = None
@@ -363,7 +365,7 @@ def initialize(consoleLogging=True):
                 USE_BANNER, USE_LISTVIEW, METADATA_XBMC, METADATA_MEDIABROWSER, METADATA_PS3, METADATA_SYNOLOGY, metadata_provider_dict, \
                 NEWZBIN, NEWZBIN_USERNAME, NEWZBIN_PASSWORD, GIT_PATH, MOVE_ASSOCIATED_FILES, \
                 GUI_NAME, COMING_EPS_LAYOUT, COMING_EPS_SORT, COMING_EPS_DISPLAY_PAUSED, METADATA_WDTV, METADATA_TIVO, IGNORE_WORDS, CREATE_MISSING_SHOW_DIRS, \
-                ADD_SHOWS_WO_DIR, AUTO_RENAME, DOC_USE_NAMES,SPEC_USE_NAMES
+                ADD_SHOWS_WO_DIR, AUTO_RENAME, DOC_USE_NAMES,SPEC_USE_NAMES, nameExceptionScheduler
 
         if __INITIALIZED__:
             return False
@@ -761,6 +763,11 @@ def initialize(consoleLogging=True):
                                                      cycleTime=properFinderInstance.updateInterval,
                                                      threadName="FINDPROPERS",
                                                      runImmediately=False)
+
+        nameExceptionScheduler = scheduler.Scheduler(invalidNames.InvalidNamesProcesser(),
+                                                     cycleTime=datetime.timedelta(minutes=10),
+                                                     threadName="INVALIDNAMES",
+                                                     runImmediately=True)
 
         autoPostProcesserScheduler = scheduler.Scheduler(autoPostProcesser.PostProcesser(),
                                                      cycleTime=datetime.timedelta(minutes=10),

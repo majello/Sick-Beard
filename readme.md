@@ -8,6 +8,17 @@ I have a few plans for this fork of the sickbeard piratebay edition:
 * enhanced name handling
 That should be enough for the time being.
 
+Current Status
+=====
+* Implemented basic episode name searching for documentaries and specials (configurable):
+  This version calculates a set of possible filenames for a given episode. This requires CPU and memeory, so beware.
+* Episode page:
+  This is mostly useful to see which names are generated for a given episode
+* Invalid names handling:
+  filenames that are not matched are saved in the database. if the file is scanned again later, show, season and episode numbers are retrieved from that table
+* Manage invalid names page:
+  interface to set episode information for unmatched file, delete them etc. 
+
 Original
 =====
 

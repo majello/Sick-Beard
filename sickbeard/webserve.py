@@ -42,6 +42,7 @@ from sickbeard import image_cache
 from sickbeard import naming
 from sickbeard import scene_exceptions
 from sickbeard import invalidNames
+from sickbeard.name_parser import episodeParser
 
 from sickbeard.providers import newznab
 from sickbeard.common import Quality, Overview, statusStrings
@@ -2361,6 +2362,34 @@ class Home:
             return _genericMessage("Update Failed","Update wasn't successful, not restarting. Check your log for more information.")
 
     @cherrypy.expose
+    def displayEpisode(self, episode=None):
+        if episode == None:
+            return _genericMessage("Error", "Invalid show ID")
+        else:
+            episodeObj = sickbeard.helpers.findCertainEpisode(sickbeard.showList, episode)
+            if episodeObj == None:
+                return _genericMessage("Error", "Episode not available.")
+
+            showObj = episodeObj.show
+            if showObj == None:
+                return _genericMessage("Error", "Show not in show list")
+
+        showObj.exceptions = scene_exceptions.get_scene_exceptions(showObj.tvdbid)
+        t = PageTemplate(file="displayEpisode.tmpl")
+        t.submenu = [{'title': 'Back to Show', 'path': 'home/displayShow?show=%d'%showObj.tvdbid}]
+        t.show = showObj
+        t.episode = episodeObj
+        t.show_message = ""
+        t.names = episodeParser.episode_parser.getNames(episodeObj)
+        t.names = sorted(t.names,key=lambda k: k[1])
+        # FIXME: shouldn't this be part of TV_Show?
+        try:
+            t.showLoc = (showObj.location, True)
+        except sickbeard.exceptions.ShowDirNotFoundException:
+            t.showLoc = (showObj._location, False)
+        return _munge(t)
+
+    @cherrypy.expose
     def displayShow(self, show=None):
 
         if show == None:
@@ -2372,7 +2401,7 @@ class Home:
 
                 return _genericMessage("Error", "Show not in show list")
 
-        showObj.exceptions = scene_exceptions.get_scene_exceptions(showObj.tvdbid)      
+        showObj.exceptions = scene_exceptions.get_scene_exceptions(showObj.tvdbid)
 
         myDB = db.DBConnection()
 
