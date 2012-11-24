@@ -20,9 +20,11 @@ import sickbeard
 
 from sickbeard import logger
 
-from sickbeard import tvcache
+from sickbeard import tvcache,show_name_helpers
 
-import generic
+from bs4 import BeautifulSoup
+
+import generic, urllib
 
 class WombleProvider(generic.NZBProvider):
 
@@ -37,6 +39,35 @@ class WombleProvider(generic.NZBProvider):
     def isEnabled(self):
         return sickbeard.WOMBLE
 
+    def _Xget_season_search_strings(self, show, season):
+        sceneSearchStrings = set(show_name_helpers.makeSceneSeasonSearchString(show, season))
+
+        # search for all show names and episode numbers like ("a","b","c") in a single search
+        return sceneSearchStrings
+    
+    def _Cget_title_and_url(self, item):
+        return (item["title"],item["url"])
+    
+    def _XdoSearch(self, curString, quotes=False, show=None):
+        # support search on womble, grab
+        host = "http://www.newshost.co.za/"
+        params = {"s":curString.replace(" ",".")}
+        searchURL = host + "?" + urllib.urlencode(params)
+        searchResult = self.getURL(searchURL)
+        results = []
+        try:
+            soup = BeautifulSoup(searchResult)
+            agerow = soup.find("td",text="Age").parent
+            for row in agerow.find_next_siblings("tr"):
+                cells = row.find_all("td")
+                if len(cells) < 5:
+                    continue
+                title = cells[5].string
+                url = host+ cells[3].find("a")["href"]
+                results.append({"title":title,"url":url})
+        except Exception as e:
+            logger.log("Womble search failed: %s" % e)
+        return results
 
 class WombleCache(tvcache.TVCache):
 

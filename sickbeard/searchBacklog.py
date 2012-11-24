@@ -129,7 +129,7 @@ class BacklogSearcher:
                 continue
 
 # TODO: Extend search modes for episode naming methods
-#            if "documentary" in curShow.genre.lower():
+#            if ("documentary" in curShow.genre.lower() and sickbeard.DOC_USE_NAMES) or :
 #                for snum in curShow.episodes.keys():
 #                    sn = curShow.episodes[snum]
 #                    for epnum in sn.keys():

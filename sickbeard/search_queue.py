@@ -26,6 +26,7 @@ from sickbeard import db, logger, common, exceptions, helpers
 from sickbeard import generic_queue
 from sickbeard import search
 from sickbeard import ui
+from sickbeard.name_parser import episodeParser
 
 BACKLOG_SEARCH = 10
 RSS_SEARCH = 20
@@ -72,8 +73,6 @@ class SearchQueue(generic_queue.GenericQueue):
         elif isinstance(item, BacklogQueueItem) and not self.is_in_queue(item.show, item.segment):
             generic_queue.GenericQueue.add_item(self, item)
         elif isinstance(item, ManualSearchQueueItem) and not self.is_ep_in_queue(item.ep_obj):
-            generic_queue.GenericQueue.add_item(self, item)
-        elif isinstance(item, EpisodeQueueItem) and not self.is_ep_in_queue(item.ep_obj):
             generic_queue.GenericQueue.add_item(self, item)
         else:
             logger.log(u"Not adding item, it's already in the queue", logger.DEBUG)
@@ -184,7 +183,7 @@ class BacklogQueueItem(generic_queue.QueueItem):
 
         # see if there is anything in this season worth searching for
         if not self.show.air_by_date:
-            statusResults = myDB.select("SELECT status FROM tv_episodes WHERE showid = ? AND season = ?", [self.show.tvdbid, self.segment])
+            statusResults = myDB.select("SELECT status, episode FROM tv_episodes WHERE showid = ? AND season = ?", [self.show.tvdbid, self.segment])
         else:
             segment_year, segment_month = map(int, self.segment.split('-'))
             min_date = datetime.date(segment_year, segment_month, 1)
@@ -195,17 +194,30 @@ class BacklogQueueItem(generic_queue.QueueItem):
             else:
                 max_date = datetime.date(segment_year, segment_month+1, 1) - datetime.timedelta(days=1)
 
-            statusResults = myDB.select("SELECT status FROM tv_episodes WHERE showid = ? AND airdate >= ? AND airdate <= ?",
+            statusResults = myDB.select("SELECT status, episode FROM tv_episodes WHERE showid = ? AND airdate >= ? AND airdate <= ?",
                                         [self.show.tvdbid, min_date.toordinal(), max_date.toordinal()])
-            
+
         anyQualities, bestQualities = common.Quality.splitQuality(self.show.quality) #@UnusedVariable
         self.wantSeason = self._need_any_episodes(statusResults, bestQualities)
 
     def execute(self):
-        
+
         generic_queue.QueueItem.execute(self)
 
         results = search.findSeason(self.show, self.segment)
+
+        # no other result, not air by date and relevant options are on:
+        if results == [] and not self.show.air_by_date and \
+           ((sickbeard.DOC_USE_NAMES and "documentary" in self.show.genre.lower()) or \
+            (sickbeard.SPEC_USE_NAMES and self.segment == 0)):
+            # walk the episode list, get the episode object and search
+            for epnum in self.epList:
+                epObj = self.show.getEpisode(self.segment, epnum, file=None, noCreate=False)
+                results += search.findEpisodeByName(epObj)
+
+        # we tried it the simple way, call the bridge
+        if results == []:
+            results = self._findByName()
 
         # download whatever we find
         for curResult in results:
@@ -215,10 +227,11 @@ class BacklogQueueItem(generic_queue.QueueItem):
         self.finish()
 
     def _need_any_episodes(self, statusResults, bestQualities):
+        return self._findWanted(statusResults, bestQualities) != []
 
-        wantSeason = False
-        
+    def _findWanted(self,statusResults,bestQualities):
         # check through the list of statuses to see if we want any
+        result = []
         for curStatusResult in statusResults:
             curCompositeStatus = int(curStatusResult["status"])
             curStatus, curQuality = common.Quality.splitCompositeStatus(curCompositeStatus)
@@ -230,46 +243,16 @@ class BacklogQueueItem(generic_queue.QueueItem):
 
             # if we need a better one then say yes
             if (curStatus in (common.DOWNLOADED, common.SNATCHED, common.SNATCHED_PROPER) and curQuality < highestBestQuality) or curStatus == common.WANTED:
-                wantSeason = True
-                break
+                result += [int(curStatusResult["episode"])]
 
-        return wantSeason
+        self.epList = result
+        return result
 
-class EpisodeQueueItem(generic_queue.QueueItem):
-    def __init__(self, ep_obj):
-        generic_queue.QueueItem.__init__(self, 'Documentary Search', MANUAL_SEARCH)
-        self.priority = generic_queue.QueuePriorities.LOW
-        self.ep_obj = ep_obj
-        self.success = None
-
-    def execute(self):
-        generic_queue.QueueItem.execute(self)
-
-        logger.log("Searching for download for " + self.ep_obj.prettyName())
-
-        foundEpisode = search.findEpisode(self.ep_obj, manualSearch=True)
-        result = False
-
-        if not foundEpisode:
-            ui.notifications.message('No downloads were found', "Couldn't find a download for <i>%s</i>" % self.ep_obj.prettyName())
-            logger.log(u"Unable to find a download for "+self.ep_obj.prettyName())
-
-        else:
-
-            # just use the first result for now
-            logger.log(u"Downloading episode from " + foundEpisode.url)
-            result = search.snatchEpisode(foundEpisode)
-            providerModule = foundEpisode.provider
-            if not result:
-                ui.notifications.error('Error while attempting to snatch '+foundEpisode.name+', check your logs')
-            elif providerModule == None:
-                ui.notifications.error('Provider is configured incorrectly, unable to download')
-
-        self.success = result
-
-    def finish(self):
-        # don't let this linger if something goes wrong
-        if self.success == None:
-            self.success = False
-        generic_queue.QueueItem.finish(self)
-
+    def _findByName(self):
+        result = []
+        if not self.show.air_by_date:
+            # we don't do air-by-date
+            for epnum in self.epList:
+                epObj = self.show.getEpisode(self.segment, epnum, file=None, noCreate=False)
+                result += search.findEpisodeByName(epObj)
+        return result

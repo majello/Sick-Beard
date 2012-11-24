@@ -51,6 +51,15 @@ class NZBMatrixProvider(generic.NZBProvider):
         # search for all show names and episode numbers like ("a","b","c") in a single search
         return [' '.join(sceneSearchStrings)]
 
+    def _get_name_search_strings(self, names):
+        # single name based search.
+        result = []
+        for name in names:
+            w = name.split()
+            sname = "( +" + " +".join(w) + " )"
+            result +=[sname]
+        return result
+
     def _get_episode_search_strings(self, ep_obj):
         sceneSearchStrings = set(show_name_helpers.makeSceneSearchString(ep_obj))
         # search for all show names and episode numbers like ("a","b","c") in a single search

@@ -119,17 +119,20 @@ replace with: <b><%=", ".join([Quality.qualityStrings[x] for x in bestQualities]
 
       <table width="100%" class="align-left">
       <tr><th colspan=2 style="text-align:center">Recognised filenames:</th></tr>
-      <tr><td colspan=2><div id="summary"><small>Filenames are sanitized before comparison against the pattern name below. Patterns marked with "*" are considered low confidence as they have no indication regarding the season. in these cases, season 1 is assumed.</small></div></td></tr>
+      <tr><td colspan=2><div id="summary"><small>Filenames are sanitized before comparison against the pattern name below. Patterns marked with "-" are considered low confidence as they have no indication regarding the season. in these cases, season 1 is assumed. Patterns marked "+" are used in episode based search.</small></div></td></tr>
       #set $lastid = -1
       #for $pinfo in $names:
       #if $pinfo[1] != $lastid
       #set $lastid = $pinfo[1]
-      <tr><th colspan=2>$pinfo[4]</th></tr>
+      <tr><th colspan=2>$pinfo[4] ($pinfo[2])</th></tr>
       #end if
       <tr>
         <td width="3%">
         #if $pinfo[2] < 5
-        *
+        -
+        #end if
+        #if $pinfo[2] > 9 or $pinfo[2] < 0
+        +
         #end if
         </td>
         <td>$pinfo[3]</td>

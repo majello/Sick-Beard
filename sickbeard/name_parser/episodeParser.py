@@ -40,17 +40,16 @@ docTestCache = {}
 episodeNameCache = {}
 
 def _nameVariations(name, network=True):
-    if network and name in networkVariationsCache:
-        return networkVariationsCache[name]
-    if not network and name in nameVariationsCache:
-        return nameVariationsCache[name]
-    if network and name.lower() in network_variants:
-        name = network_variants[name.lower()]
-    sname = name.lower().split()
-    result = [name.lower()]
-    # check for Documentaries ending
-    result = result + [" ".join([x for x in sname if x != "documentaries"])]
+    result = []
+    # result = result + [" ".join([x for x in sname if x != "documentaries"])]
+    name = _sanitizedEpisodeName(name, None)
     if network:
+        if name in networkVariationsCache:
+            return networkVariationsCache[name]
+        # check name variants e.g. history => history channel
+        if name.lower() in network_variants:
+            name = network_variants[name.lower()]
+        sname = name.lower().split()
         # for our purposes, skip channel numbers (e.g. BBC Four -> BBC)
         sname = [n for n in sname if n not in litnums.values()]
         # check for Channel -> Ch
@@ -60,9 +59,15 @@ def _nameVariations(name, network=True):
         # check for National Geographics -> NG
         if len(sname) > 1:
             result = result + ["".join([x[0] for x in list(sname)])]
-    if network:
         networkVariationsCache[name] = result
     else:
+        if name in nameVariationsCache:
+            return nameVariationsCache[name]
+        sname = name.lower().split()
+        # check for Documentaries ending
+        if sname[-1] == "documentaries":
+            sname = sname[:-1]
+        result = [" ".join(sname)]
         nameVariationsCache[name] = result
     return result
 
@@ -84,15 +89,18 @@ def _networkShowPattern(episode, shownames):
 def _xOfyPattern(episode, weak=False):
     if not episode in xyPatternCache:
         pattern = []
-        pattern.append("%dof%d" % (episode.episode, _numEpisodesForSeason(episode)))
-        pattern.append("%02dof%d" % (episode.episode, _numEpisodesForSeason(episode)))
-        pattern.append("%d of %d" % (episode.episode, _numEpisodesForSeason(episode)))
-        pattern.append("%02d of %d" % (episode.episode, _numEpisodesForSeason(episode)))
+        ns = _numEpisodesForSeason(episode)
+        pattern.append("%dof%d" % (episode.episode, ns))
+        pattern.append("%d of %d" % (episode.episode, ns))
+        if ns >= 10:
+            pattern.append("%02dof%d" % (episode.episode, ns))
+            pattern.append("%02d of %d" % (episode.episode, ns))
         if weak == True:
             pattern.append("%dof" % (episode.episode))
-            pattern.append("%02dof" % (episode.episode))
             pattern.append("%d of" % (episode.episode))
-            pattern.append("%02d of" % (episode.episode))
+            if ns >= 10:
+                pattern.append("%02dof" % (episode.episode))
+                pattern.append("%02d of" % (episode.episode))
         xyPatternCache[episode] = pattern
     return xyPatternCache[episode]
 
@@ -104,11 +112,14 @@ def _isDocumentary(show):
 def _sanitizedEpisodeName(episode,tvdbid = None):
     if tvdbid == None or not tvdbid in episodeNameCache:
         r = episode.lower()
-        r = string.replace(r,".","")
-        r = string.replace(r,":","")
-        r = string.replace(r,"-","")
-        r = string.replace(r,"_","")
-        r = string.replace(r,",","")
+        r = r.replace("."," ")
+        r = r.replace(":","")
+        r = r.replace("-","")
+        r = r.replace("_","")
+        r = r.replace(",","")
+        r = r.replace(u"'","")
+        r = r.replace("\"","")
+        r = r.replace("  "," ")
         if tvdbid == None:
             return r
         episodeNameCache[tvdbid] = r
@@ -131,7 +142,7 @@ def _namePattern1(episode, shownames):
 def _namePattern3(episode, shownames):
     if not _isDocumentary(episode.show):
         return (3, 3, [])
-    return (3, 10, [x + " " + sp + str(episode.season) + " " + _sanitizedEpisodeName(episode.name,episode.tvdbid) for sp in ["","S"] for x in _networkShowPattern(episode, shownames)])
+    return (3, 9, [x + " " + sp + str(episode.season) + " " + _sanitizedEpisodeName(episode.name,episode.tvdbid) for sp in ["","S"] for x in _networkShowPattern(episode, shownames)])
 
 def _namePattern5(episode, shownames):
     if not _isDocumentary(episode.show):
@@ -155,7 +166,7 @@ def _namePattern12(episode, shownames):
 
 def _namePattern15(episode, shownames):
     if episode.season <=6 and _isDocumentary(episode.show):
-        return (15, 8, [y+" "+x+" season "+litnums[episode.season]+" "+p for n in shownames for x in _nameVariations(n) for y in _nameVariations(episode.show.network) for p in _xOfyPattern(episode)])
+        return (15, 8, [x+" season "+litnums[episode.season]+" "+p for x in _networkShowPattern(episode, shownames) for p in _xOfyPattern(episode)])
     else:
         return (15, 8, [])
 
@@ -190,25 +201,35 @@ class EpisodeParser(object):
             r = [(v[0], v[1], v[2], k,ruleDescriptions[v[1]]) for k, v in self.nameList.iteritems() if v[0] == episode]
             return r
 
+    def _findBestMatch(self,result):
+        v = max(result, key=lambda x: x[2])
+        # confidence level 3 get special treatment, we prefer season 1 for those
+        if v[2] == 3:
+            for k1 in result.iteritems():
+                if k1[0].season == 1 and k1[2] == 3:
+                    v = k1
+                    break
+        # return just the episode
+        return v[0]
+
+    def matchNames(self,filename,base):
+        prep = _sanitizedEpisodeName(filename)
+        result = [(v[0], v[1], v[2], v[3]) for v in base if prep.startswith(v[3])]
+        if result == []:
+            return None
+        else:
+            return self._findBestMatch(result)
+
     def match(self, filename):
         with self.nameLock:
             self._parseShows()
             prep = _sanitizedEpisodeName(filename)
-            # TODO: replace for loop test for filename fragments (should be faster with large DB
             # REMINDER: 0 is episode, 1 is ruleID,2 is confidence
             result = [(v[0], v[1], v[2], k) for k,v in self.nameList.iteritems() if prep.startswith(k)]
             if result == []:
                 return None
             else:
-                v = max(result.iteritems(), key=lambda x: x[2])
-                # confidence level 3 get special treatment, we prefer season 1 for those
-                if v[2] == 3:
-                    for k1 in result.iteritems():
-                        if k1[0].season == 1 and k1[2] == 3:
-                            v = k1
-                            break
-                # return just the episode
-                return v[0]
+                return self._findBestMatch(result)
 
     def _makeNames(self, nlist, episode, allnames):
         if episode.name.strip() == "":
