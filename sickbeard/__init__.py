@@ -488,7 +488,6 @@ def initialize(consoleLogging=True):
         NAMING_ABD_PATTERN = check_setting_str(CFG, 'General', 'naming_abd_pattern', '')
         NAMING_CUSTOM_ABD = check_setting_int(CFG, 'General', 'naming_custom_abd', 0)
         NAMING_MULTI_EP = check_setting_int(CFG, 'General', 'naming_multi_ep', 1)
-        NAMING_FORCE_FOLDERS = naming.check_force_season_folders()
         NAMING_STRIP_YEAR = bool(check_setting_int(CFG, 'General', 'naming_strip_year', 0))
 
         TVDB_BASE_URL = 'http://www.thetvdb.com/api/' + TVDB_API_KEY
@@ -777,6 +776,10 @@ def initialize(consoleLogging=True):
         
         # fix up any db problems
         db.sanityCheckDatabase(db.DBConnection(), mainDB.MainSanityCheck)
+
+        # calling the parser only works after initializing the DB, thus moved here
+        NAMING_FORCE_FOLDERS = naming.check_force_season_folders()
+        
 
         # migrate the config if it needs it
         migrator = ConfigMigrator(CFG)

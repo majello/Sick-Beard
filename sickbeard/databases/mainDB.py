@@ -552,25 +552,7 @@ class SpecializedNames (RenameSeasonFolders):
         for query in queries:
             self.connection.action(query)
 
-class NamePrefixes (SpecializedNames):
-    def test(self):
-        return self.hasTable("name_prefix")
-
-    def execute(self):
-        queries = [
-            "CREATE TABLE name_prefix (prefix TEXT PRIMARY KEY, prefixCategory TEXT, usage TEXT)",
-        ]
-        for query in queries:
-            self.connection.action(query)
-
-class AddShowToSpecializedNames (NamePrefixes):
-    def test(self):
-        return self.hasColumn("file_exceptions", "showname")
-
-    def execute(self):
-        self.addColumn("file_exceptions", "showname", "TEXT", "")
-
-class AddShowToSpecializedNamesInfo (AddShowToSpecializedNames):
+class AddInfoToSpecializedNames (SpecializedNames):
     def test(self):
         return self.hasColumn("file_exceptions", "source")
 
@@ -578,7 +560,7 @@ class AddShowToSpecializedNamesInfo (AddShowToSpecializedNames):
         self.addColumn("file_exceptions", "source", "TEXT", "")
         self.addColumn("file_exceptions", "stamp", "INTEGER", 0)
 
-class AddSubtitlesSupport(AddShowToSpecializedNamesInfo):    
+class AddSubtitlesSupport(AddInfoToSpecializedNames):    
     def test(self):
         return self.checkDBVersion() >= 12
 

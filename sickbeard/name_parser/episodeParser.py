@@ -248,7 +248,7 @@ class EpisodeParser(object):
 
     def _parseShows(self,r=False):
         # TODO: implement variable refresh frequency
-        if self.nameList == {} or time.time()-(5*60) > self.nameAge:
+        if (self.nameList == {} or time.time()-(5*60) > self.nameAge) and sickbeard.showList != None:
             if self.buildLock.acquire(False):
                 try:
                     logger.log("Start building episode name patterns. This may take a while.")
@@ -292,8 +292,8 @@ class EpisodeParser(object):
                 else:
                     self.buildLock.release()
 
-            with self.nameLock:
-                self.nameList = nlist
+                with self.nameLock:
+                    self.nameList = nlist
                 self.nameAge = time.time()
             logger.log("Built %i episode name patterns in %i seconds (%i in database)." % (len(self.nameList), int(time.time()-q2), int(q1+q0)))
         return
