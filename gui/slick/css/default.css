@@ -362,6 +362,23 @@ input:not(.btn){margin-right:6px;margin-top:5px;padding-top:4px;padding-bottom:4
   border-top: #fff 1px solid;
   vertical-align: middle;
 }
+
+#massUpdateTable.sickbeardTable th {
+  padding: 4px 0 !important;
+  border-top: #fff 1px solid;
+  vertical-align: middle;
+}
+
+#massUpdateTable.sickbeardTable th {
+  padding: 4px 0 !important;
+  border-top: #fff 1px solid;
+  vertical-align: middle;
+}
+
+#massUpdateTable.tablesorter td {
+  padding: 8px 5px;
+}
+
 .sickbeardTable th:first-child,
 .sickbeardTable td:first-child {
   border-left: none;
@@ -386,14 +403,27 @@ input:not(.btn){margin-right:6px;margin-top:5px;padding-top:4px;padding-bottom:4
 .sickbeardTable td {
   font-size: 14px;
 }
+
 .sickbeardTable td.title {
   font-size: 14px;
   line-height: normal;
 }
-/*.sickbeardTable td.status_column {
-  line-height: normal;
+.sickbeardTable td.status_column {
+  font-weight: bold;
+  line-height: 20px;
   text-align: center;
-}*/
+  width: 12%;
+	color: #555555;
+}
+
+.sickbeardTable td.subtitles_column {
+  vertical-align: middle;
+  width: 10%;
+}
+
+.sickbeardTable td.subtitles_column img {
+  padding-right: 2px;
+}
 .sickbeardTable td small {
   font-size: 11px;
   font-style: italic;

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
+
 import sickbeard
 import os.path
 
@@ -71,7 +73,7 @@ class MainSanityCheck(db.DBSanityCheck):
             logger.log(u"No duplicate episode, check passed")
 
     def fix_orphan_episodes(self):
-
+        
         sqlResults = self.connection.select("SELECT episode_id, showid, tv_shows.tvdb_id FROM tv_episodes LEFT JOIN tv_shows ON tv_episodes.showid=tv_shows.tvdb_id WHERE tv_shows.tvdb_id is NULL")
 
         for cur_orphan in sqlResults:
@@ -423,7 +425,7 @@ class AddSizeAndSceneNameFields(FixAirByDateSetting):
     
     def execute(self):
 
-        backupDatabase(10)
+        backupDatabase(11)
 
         if not self.hasColumn("tv_episodes", "file_size"):
             self.addColumn("tv_episodes", "file_size")
@@ -576,3 +578,14 @@ class AddShowToSpecializedNamesInfo (AddShowToSpecializedNames):
         self.addColumn("file_exceptions", "source", "TEXT", "")
         self.addColumn("file_exceptions", "stamp", "INTEGER", 0)
 
+class AddSubtitlesSupport(AddShowToSpecializedNamesInfo):    
+    def test(self):
+        return self.checkDBVersion() >= 12
+
+    def execute(self):
+        
+        self.addColumn("tv_shows", "subtitles")
+        self.addColumn("tv_episodes", "subtitles", "TEXT", "")
+        self.addColumn("tv_episodes", "subtitles_searchcount")
+        self.addColumn("tv_episodes", "subtitles_lastsearch", "TIMESTAMP", str(datetime.datetime.min))
+        self.incDBVersion()

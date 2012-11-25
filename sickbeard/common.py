@@ -37,10 +37,12 @@ SEASON_RESULT = -2
 ### Notification Types
 NOTIFY_SNATCH = 1
 NOTIFY_DOWNLOAD = 2
+NOTIFY_SUBTITLE_DOWNLOAD = 3
 
 notifyStrings = {}
 notifyStrings[NOTIFY_SNATCH] = "Started Download"
 notifyStrings[NOTIFY_DOWNLOAD] = "Download Finished"
+notifyStrings[NOTIFY_SUBTITLE_DOWNLOAD] = "Subtitle Download Finished"
 
 ### Episode statuses
 UNKNOWN = -1 # should never happen
@@ -118,7 +120,7 @@ class Quality:
             if curQual<<16 & quality:
                 bestQualities.append(curQual)
 
-        return (anyQualities, bestQualities)
+        return (sorted(anyQualities), sorted(bestQualities))
 
     @staticmethod
     def nameQuality(name):
@@ -155,7 +157,7 @@ class Quality:
     @staticmethod
     def assumeQuality(name):
 
-        if name.lower().endswith(".avi"):
+        if name.lower().endswith((".avi", ".mp4")):
             return Quality.SDTV
         elif name.lower().endswith(".mkv"):
             return Quality.HDTV

@@ -178,43 +178,11 @@ ep_regexes = [
                '''
                ^((?P<series_name>.+?)(?:[. _-]{2,}|[. _]))?             # Show_Name and separator
                (?P<ep_num>\d{1,2})                           # 02
-               (?:-(?P<extra_ep_num>\d{1,2}))?               # 02
+               (?:-(?P<extra_ep_num>\d{1,2}))*               # 02
                [. _-]+((?P<extra_info>.+?)                 # Source_Quality_Etc-
                ((?<![. _-])(?<!WEB)                        # Make sure this is really the release group
                -(?P<release_group>[^- ]+))?)?$              # Group
                '''
                ),
-
-#
-# Documentaries support
-#
-#              ('documentary_pure_no_season',
-#              '''
-#              ^((?P<series_name>.+?)[. _-])             # ShowName
-#              ((?P<ep_num>\d{1,2}?)of\d{1,2}[. _-])      # episode number
-#              (?P<extra_info>.+?)$
-#              '''
-#              ),
-#
-#              ('documentary_pure_with_season',
-#              '''
-#              ^((?P<series_name>.+?)[. _-])             # ShowName
-#              ((?P<season_num>\d{1,2}?)[. _-])           # season number
-#              ((?P<ep_num>\d{1,2}?)of\d{1,2}[. _-])      # episode number
-#              (?P<extra_info>.+?)$
-#              '''
-#              ),
-#
-#              ('documentary_with_channel_no_season',
-#              '''
-#              ^(?P<channel_name>BBC|Ch4|SBS|ITV|ARTE|Channel 4|PBS|SVT|NG|National Geographic|NHK|DC|Discovery Ch|Discovery Channel|HC|History Ch|History Channel)
-#              [. _-]
-#              ((?P<series_name>.+?)[. _-])             # ShowName
-#              ((?P<ep_num>\d{1,2}?)of\d{1,2}[. _-])      # episode number
-#              (?P<extra_info>.+?)$
-#              '''
-#              ),
-
-
               ]
 

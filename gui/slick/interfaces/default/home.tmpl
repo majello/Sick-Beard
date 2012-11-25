@@ -10,7 +10,6 @@
 
 #set global $topmenu="home"#
 #import os.path
-#set $sickbeard.GUI = "gui/slick/"  
 #include $os.path.join($sickbeard.PROG_DIR, "gui/slick/interfaces/default/inc_top.tmpl")
 
 #set $myDB = $db.DBConnection()
@@ -57,12 +56,15 @@
             return -10;
 
         var nums = match[1].split(" / ");
+        
+        if (parseInt(nums[0]) === 0)
+        	return parseInt(nums[1]);
 
         var finalNum = parseInt((nums[0]/nums[1])*1000)*100;
         if (finalNum > 0)
             finalNum += parseInt(nums[0]);
 
-        return finalNum
+        return finalNum;
     },
     type: 'numeric'
 });
@@ -98,7 +100,7 @@
   <thead><tr><th class="nowrap">Next Ep</th><th>Poster</th></td><th>Show</th><th>Network</th><th>Quality</th><th>Downloads</th><th>Active</th><th>Status</th></tr></thead>
   <tfoot>
     <tr>
-      <th rowspan="1" colspan="1" align="center"><a href="$sbRoot/home/addShows/">Add Show</a></th>
+      <th rowspan="1" colspan="1" align="center"><a href="$sbRoot/home/addShows/">&nbsp Add Show</a></th>
       <th rowspan="1" colspan="7"></th>
     </tr>
   </tfoot>
@@ -154,7 +156,7 @@ $myShowList.sort(lambda x, y: cmp(x.name, y.name))
 
   <tr>
     <td align="center" class="nowrap">#if len($curEp) != 0 then $curEp[0].airdate else ""#</td>
-    <td><div class="imgWrapper"><a href="$sbRoot/showPoster/?show=$curShow.tvdbid&amp;which=poster" rel="dialog" title="$curShow.name"><img src="$sbRoot/images/grey.gif" data-original="$sbRoot/showPoster/?show=$curShow.tvdbid&amp;which=poster" class="posterThumb lazy" alt="$curShow.tvdbid"/></a></div></td>
+    <td><div class="imgWrapper"><a href="$sbRoot/showPoster/?show=$curShow.tvdbid&amp;which=poster" rel="dialog" title="$curShow.name"><img src="$sbRoot/images/grey.gif" data-original="$sbRoot/showPoster/?show=$curShow.tvdbid&amp;which=thumbnail" class="posterThumb lazy" alt="$curShow.tvdbid"/></a></div></td>
     <td class="tvShow"><a href="$sbRoot/home/displayShow?show=$curShow.tvdbid">$curShow.name</a></td>
     <td align="center">$curShow.network</td>
 #if $curShow.quality in $qualityPresets:

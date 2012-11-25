@@ -218,12 +218,6 @@ def isGoodResult(name, show, log=True):
             logger.log(u"Matched "+curRegex+" to "+name, logger.DEBUG)
             return True
 
-        curRegex = escaped_name + '[. _-].*\d{1,2}of\d{1,2}.*'
-        match = re.search(curRegex, name, re.I)
-        if match:
-            logger.log(u"Matched (doc) "+curRegex+" to "+name, logger.DEBUG)
-            return True
-
     if log:
         logger.log(u"Provider gave result "+name+" but that doesn't seem like a valid result for "+show.name+" so I'm ignoring it")
     return False
