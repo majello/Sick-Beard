@@ -20,6 +20,7 @@ from __future__ import with_statement
 
 import datetime
 import threading
+import sys
 
 import sickbeard
 
@@ -128,17 +129,6 @@ class BacklogSearcher:
             if curShow.paused:
                 continue
 
-# TODO: Extend search modes for episode naming methods
-#            if ("documentary" in curShow.genre.lower() and sickbeard.DOC_USE_NAMES) or :
-#                for snum in curShow.episodes.keys():
-#                    sn = curShow.episodes[snum]
-#                    for epnum in sn.keys():
-#                        ep = sn[epnum]
-#                        self.currentSearchInfo = {'title': curShow.name + " Season "+str(snum)+" Episode "+str(epnum)}
-#                        backlog_queue_item = search_queue.EpisodeQueueItem(ep)
-#                        sickbeard.searchQueueScheduler.action.add_item(backlog_queue_item)   #@UndefinedVariable
-#                        pass
-#            else:
             if curShow.air_by_date:
                 segments = [x[1] for x in self._get_air_by_date_segments(curShow.tvdbid, fromDate)]
             else:
