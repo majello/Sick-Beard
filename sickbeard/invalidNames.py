@@ -18,7 +18,7 @@
 
 from sickbeard import db, logger, name_parser
 
-import os, time
+import os, time, datetime
 
 def findFile(filename, show = None, snum = None, epnum = None, source = "Unknown"):
     # check if file in table
@@ -100,16 +100,16 @@ def remove(full_filename, reason = "unknown reason"):
     return
 
 def expunge():
-    # TODO: schedule regular expunge
     myDB = db.DBConnection()
     # clean up mess
     myDB.action('UPDATE file_exceptions SET showname="" WHERE showname = "None"')
     myDB.action('UPDATE file_exceptions SET season="" WHERE season = "None"')
     myDB.action('UPDATE file_exceptions SET episode="" WHERE episode = "None"')
     # see if we have old RSS entries
-    # TODO: make expiry time configurable, currently set to 5 minutes
-    myDB.action('DELETE FROM file_exceptions WHERE (source = "RSS" AND stamp < ?) OR source = "Unknown"', [int(time.time() - 5 * 60)])
-
+    # TODO: make expiry time configurable, currently set to 30 minutes
+    myDB.action('DELETE FROM file_exceptions WHERE (source = "RSS" AND stamp < ?) OR source = "Unknown"', [int(time.time() - 30 * 60)])
+    # fix spurious entries
+    myDB.action('DELETE FROM file_exceptions WHERE source IS NULL')
 def parse():
     myDB = db.DBConnection()
     names = myDB.action("SELECT filename FROM file_exceptions").fetchall()
@@ -125,5 +125,11 @@ def parse():
 
 class InvalidNamesProcesser():
 
+    def __init__(self):
+        self.updateInterval = datetime.timedelta(minutes=10)
+
     def run(self):
-        expunge()
+        try:
+            expunge()
+        except:
+            raise

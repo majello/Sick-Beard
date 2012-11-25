@@ -764,7 +764,8 @@ def initialize(consoleLogging=True):
                                                      threadName="FINDPROPERS",
                                                      runImmediately=False)
 
-        nameExceptionScheduler = scheduler.Scheduler(invalidNames.InvalidNamesProcesser(),
+        invalidNamesInstance = invalidNames.InvalidNamesProcesser()
+        nameExceptionScheduler = scheduler.Scheduler(invalidNamesInstance,
                                                      cycleTime=datetime.timedelta(minutes=10),
                                                      threadName="INVALIDNAMES",
                                                      runImmediately=True)
@@ -792,7 +793,7 @@ def start():
     global __INITIALIZED__, currentSearchScheduler, backlogSearchScheduler, \
             showUpdateScheduler, versionCheckScheduler, showQueueScheduler, \
             properFinderScheduler, autoPostProcesserScheduler, searchQueueScheduler, \
-            started
+            nameExceptionScheduler, started
 
     with INIT_LOCK:
 
@@ -816,6 +817,9 @@ def start():
             # start the search queue checker
             searchQueueScheduler.thread.start()
 
+            # start the name exceptions cleaner
+            nameExceptionScheduler.thread.start()
+
             # start the queue checker
             properFinderScheduler.thread.start()
 
@@ -828,7 +832,7 @@ def halt ():
 
     global __INITIALIZED__, currentSearchScheduler, backlogSearchScheduler, showUpdateScheduler, \
             showQueueScheduler, properFinderScheduler, autoPostProcesserScheduler, searchQueueScheduler, \
-            started
+            nameExceptionScheduler,started
 
     with INIT_LOCK:
 
@@ -877,6 +881,13 @@ def halt ():
             logger.log(u"Waiting for the SEARCHQUEUE thread to exit")
             try:
                 searchQueueScheduler.thread.join(10)
+            except:
+                pass
+
+            nameExceptionScheduler.abort = True
+            logger.log(u"Waiting for the INVALIDNAMES thread to exit")
+            try:
+                nameExceptionScheduler.thread.join(10)
             except:
                 pass
 
