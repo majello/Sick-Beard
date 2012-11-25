@@ -292,11 +292,11 @@ class GitUpdateManager(UpdateManager):
         branch_info = self._run_git('symbolic-ref -q HEAD')
 
         if not branch_info or not branch_info[0]:
-            return 'master'
+            return version.SICKBEARD_GITHUB_DEFAULTBRANCH
 
         branch = branch_info[0].strip().replace('refs/heads/', '', 1)
 
-        return branch or 'master'
+        return branch or version.SICKBEARD_GITHUB_DEFAULTBRANCH
 
 
     def _check_github_for_update(self):
@@ -313,7 +313,7 @@ class GitUpdateManager(UpdateManager):
         gh = github.GitHub()
 
         # find newest commit
-        for curCommit in gh.commits('mr-orange', 'Sick-Beard', version.SICKBEARD_VERSION):
+        for curCommit in gh.commits(version.SICKBEARD_GITHUB_USER, version.SICKBEARD_GITHUB_PROJECT, version.SICKBEARD_VERSION):
 
             if not self._newest_commit_hash:
                 self._newest_commit_hash = curCommit['sha']
@@ -342,9 +342,9 @@ class GitUpdateManager(UpdateManager):
             return
 
         if self._newest_commit_hash:
-            url = 'http://github.com/mr-orange/Sick-Beard/compare/'+self._cur_commit_hash+'...'+self._newest_commit_hash
+            url = 'http://github.com/'+version.SICKBEARD_GITHUB_USER + '/' + version.SICKBEARD_GITHUB_PROJECT + '/compare/'+self._cur_commit_hash+'...'+self._newest_commit_hash
         else:
-            url = 'http://github.com/mr-orange/Sick-Beard/commits/'
+            url = 'http://github.com/'+version.SICKBEARD_GITHUB_USER + '/' + version.SICKBEARD_GITHUB_PROJECT + '/commits/'
 
         new_str = 'There is a <a class="update" href="'+url+'" onclick="window.open(this.href); return false;">newer version available</a> ('+message+')'
         new_str += "&mdash; <a class=""update"" href=\""+self.get_update_url()+"\">Update Now</a>"
