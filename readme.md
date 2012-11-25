@@ -8,6 +8,7 @@ I have a few plans for this fork of the sickbeard piratebay edition:
 * [IN PROGRESS] enhanced name handling
 * [PLANNED] recommendations, trending etc. (from trakt for the time being)
 * [PLANNED] full library sync with trakt
+* [PLANNED] twitter provider (eztv_it)
 That should be enough for the time being.
 
 Current Status
@@ -19,7 +20,9 @@ Current Status
 * Invalid names handling:
   filenames that are not matched are saved in the database. if the file is scanned again later, show, season and episode numbers are retrieved from that table
 * Manage invalid names page:
-  interface to set episode information for unmatched file, delete them etc. 
+  interface to set episode information for unmatched file, delete them etc.
+* Main Page
+  implemented lazy loading of images, easier on mobile clients, esp. with a slow server 
 
 Original
 =====

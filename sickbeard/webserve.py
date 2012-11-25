@@ -2949,11 +2949,12 @@ class WebInterface:
     def showPoster(self, show=None, which=None):
 
         if which == 'poster':
-            default_image_name = 'poster.png'
+#            default_image_name = 'poster.png'
+            default_image_name = 'grey.gif'
         else:
             default_image_name = 'banner.png'
 
-        default_image_path = ek.ek(os.path.join, sickbeard.PROG_DIR, 'data', 'images', default_image_name)
+        default_image_path = ek.ek(os.path.join, sickbeard.PROG_DIR, 'gui', sickbeard.GUI_NAME ,'images', default_image_name)
         if show is None:
             return cherrypy.lib.static.serve_file(default_image_path, content_type="image/png")
         else:
