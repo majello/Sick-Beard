@@ -229,8 +229,9 @@ class NameParser(object):
         # build the ParseResult object
         final_result.air_date = self._combine_results(file_name_result, dir_name_result, 'air_date')
 
+        # air-by-date can have seasons
+        final_result.season_number = self._combine_results(file_name_result, dir_name_result, 'season_number')
         if not final_result.air_date:
-            final_result.season_number = self._combine_results(file_name_result, dir_name_result, 'season_number')
             final_result.episode_numbers = self._combine_results(file_name_result, dir_name_result, 'episode_numbers')
         
         # if the dirname has a release group/show name I believe it over the filename
