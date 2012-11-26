@@ -1115,7 +1115,7 @@ class ConfigPostProcessing:
     def savePostProcessing(self, naming_pattern=None, naming_multi_ep=None,
                     xbmc_data=None, mediabrowser_data=None, synology_data=None, sony_ps3_data=None, wdtv_data=None, tivo_data=None,
                     use_banner=None, keep_processed_dir=None, process_automatically=None, rename_episodes=None,
-                    move_associated_files=None, tv_download_dir=None, naming_custom_abd=None, naming_abd_pattern=None, namimg_strip_year=None,always_rename_episodes=None):
+                    move_associated_files=None, tv_download_dir=None, naming_custom_abd=None, naming_abd_pattern=None, namimg_strip_year=None,always_rename_episodes=None,naming_strip_year=None):
 
         results = []
 
@@ -3361,20 +3361,23 @@ class WebInterface:
                 sys.exit(1) 
 
         if which == 'poster':
-            default_image_name = 'grey.png'
+            default_image_name = 'grey.gif'
+            default_content_type = "image/gif"
         elif which == 'thumbnail':
-            default_image_name = 'grey.png'
+            default_image_name = 'grey.gif'
+            default_content_type = "image/gif"
         else:
             default_image_name = 'banner.png'
+            default_content_type = "image/png"
 
         default_image_path = ek.ek(os.path.join, sickbeard.PROG_DIR, 'gui', sickbeard.GUI_NAME ,'images', default_image_name)
         if show is None:
-            return cherrypy.lib.static.serve_file(default_image_path, content_type="image/png")
+            return cherrypy.lib.static.serve_file(default_image_path, content_type=default_content_type)
         else:
             showObj = sickbeard.helpers.findCertainShow(sickbeard.showList, int(show))
 
         if showObj is None:
-            return cherrypy.lib.static.serve_file(default_image_path, content_type="image/png")
+            return cherrypy.lib.static.serve_file(default_image_path, content_type=default_content_type)
 
         cache_obj = image_cache.ImageCache()
         
@@ -3385,6 +3388,10 @@ class WebInterface:
         # this is for 'banner' but also the default case
         else:
             image_file_name = cache_obj.banner_path(showObj.tvdbid)
+
+        # when in doubt, default to poster
+        if not ek.ek(os.path.isfile, image_file_name):
+            image_file_name = cache_obj.poster_path(showObj.tvdbid)
 
         if ek.ek(os.path.isfile, image_file_name):
             try:
@@ -3405,12 +3412,12 @@ class WebInterface:
                 else:
                     return cherrypy.lib.static.serve_file(image_file_name, content_type="image/jpeg")
                 im = im.resize(size, Image.ANTIALIAS)
-                buffer = StringIO()
+                img_buffer = StringIO()
                 im.save(buffer, 'JPEG', quality=85)
                 cherrypy.response.headers['Content-Type'] = 'image/jpeg'
-                return buffer.getvalue()
+                return img_buffer.getvalue()
         else:
-            return cherrypy.lib.static.serve_file(default_image_path, content_type="image/png")
+            return cherrypy.lib.static.serve_file(default_image_path, content_type=default_content_type)
 
     @cherrypy.expose
     def setComingEpsLayout(self, layout):

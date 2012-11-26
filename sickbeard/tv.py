@@ -26,6 +26,7 @@ import glob
 import traceback
 
 import sickbeard
+from sickbeard import scene_exceptions
 
 import xml.etree.cElementTree as etree
 
@@ -454,7 +455,7 @@ class TVShow(object):
             logger.log(u"Unable to parse the filename "+file+" into a valid episode", logger.ERROR)
             return None
         
-        if parse_result.series_name != self.name and parse_result.series_name != "" and parse_result.series_name != None:
+        if ( [x for x in scene_exceptions.get_scene_exceptions(self.tvdbid) if x.lower() == parse_result.series_name.lower() ] == [] and parse_result.series_name.lower() != self.name.lower() ) or parse_result.series_name == "" or parse_result.series_name == None:
             # TODO: send to file exceptions and mark for move
             logger.log("parse_result: "+str(parse_result))
             logger.log(u"File %s (%s), does not belong to %s" % (file,parse_result.series_name,self.name), logger.ERROR)
