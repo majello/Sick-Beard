@@ -27,8 +27,8 @@ def findFile(filename, show = None, snum = None, epnum = None, source = "Unknown
     showname = None
     season = None
     episode = None
-    if source.lower() == "unknown":
-        logger.log("unknown source for %s" % (filename))
+#    if source.lower() == "unknown":
+#        logger.log("unknown source for %s" % (filename))
     if ne == []:
         # if not, insert
         if show == None or show == "None":
