@@ -79,7 +79,7 @@ def _networkShowPattern(episode, shownames):
     if not episode.show.tvdbid in showpatternCache:
         networks = set()
         shows = {x for n in shownames for x in _nameVariations(n, False)}
-        if "documentary" in episode.show.genre.lower():
+        if _isDocumentary(episode.show):
             networks = {" ".join([y, n]) for n in shows for y in _nameVariations(episode.show.network, True) if n != y and episode.show.network.lower() != n and not n.endswith("documentaries")}
         r = list(shows | networks)
         showpatternCache[episode.show.tvdbid] = r
@@ -106,7 +106,10 @@ def _xOfyPattern(episode, weak=False):
 
 def _isDocumentary(show):
     if not show in docTestCache:
-        docTestCache[show] = "documentary" in show.genre.lower()
+        if show.genre:
+            docTestCache[show] = "documentary" in show.genre.lower()
+        else:
+            docTestCache[show] = False
     return docTestCache[show]
 
 def _sanitizedEpisodeName(episode,tvdbid = None):
@@ -271,7 +274,7 @@ class EpisodeParser(object):
                         allnames = [show.name]
                         allnames += [name for name in scene_exceptions.get_scene_exceptions(show.tvdbid)]
                         # process documentaries, if allowed
-                        if sickbeard.DOC_USE_NAMES == True and "documentary" in show.genre.lower():
+                        if sickbeard.DOC_USE_NAMES == True and _isDocumentary(show):
                             q0a = time.time()
                             eplist = show.getAllEpisodes()
                             q0 += time.time()-q0a
@@ -285,7 +288,7 @@ class EpisodeParser(object):
                             for episode in eplist:
                                 if episode.season == 0:
                                     self._makeNames(nlist,episode, allnames)
-                        if sickbeard.OTHER_USE_NAMES == True and not ( "documentary" in show.genre.lower()):
+                        if sickbeard.OTHER_USE_NAMES == True and not _isDocumentary(show):
                             eplist = show.getAllEpisodes()
                             for episode in eplist:
                                 if episode.season != 0:
