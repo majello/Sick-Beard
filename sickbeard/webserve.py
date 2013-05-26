@@ -44,6 +44,8 @@ from sickbeard import image_cache
 from sickbeard import naming
 from sickbeard import scene_exceptions
 from sickbeard import subtitles
+from sickbeard import invalidNames
+from sickbeard.name_parser import episodeParser
 
 from sickbeard.providers import newznab
 from sickbeard.common import Quality, Overview, statusStrings, qualityPresetStrings
@@ -158,9 +160,10 @@ def _getEpisode(show, season, episode):
     return epObj
 
 ManageMenu = [
-    { 'title': 'Backlog Overview',          'path': 'manage/backlogOverview' },
-    { 'title': 'Manage Searches',           'path': 'manage/manageSearches'  },
-    { 'title': 'Episode Status Management', 'path': 'manage/episodeStatuses' },
+    { 'title': 'Backlog Overview',          'path': 'manage/backlogOverview/' },
+    { 'title': 'Manage Searches',           'path': 'manage/manageSearches/'  },
+    { 'title': 'Episode Status Management', 'path': 'manage/episodeStatuses/' },
+    { 'title': 'File Name Exceptions',      'path': 'manage/nameExceptions/'  },
 ]
 if sickbeard.USE_SUBTITLES:
     ManageMenu.append({ 'title': 'Missed Subtitle Management', 'path': 'manage/subtitleMissed' })
@@ -489,6 +492,72 @@ class Manage:
 
         return _munge(t)
 
+    @cherrypy.expose
+    def nameExceptions(self):
+        t = PageTemplate(file="manage_nameExceptions.tmpl")
+        slist = [(-1,"")]
+        for curShow in sickbeard.showList:
+            slist += [(curShow.tvdbid,curShow.name)]
+        t.show_list = slist
+        exlist = invalidNames.get()
+        t.filenames = exlist
+        return _munge(t)
+    
+    @cherrypy.expose
+    def nameExceptionsSubmit(self,**params):
+        if params["action"] == "Parse Names":
+            invalidNames.parse()
+            pass
+        if params["action"] == "Expunge":
+            invalidNames.expunge()
+        if params["action"] == "Submit":
+            u = {}
+            for pk in params.keys():
+                val = params[pk]
+                if pk.startswith("episode-"):
+                    num = pk.split("-")[1]
+                    if num in u.keys():
+                        u[num]["episode"] = val
+                    else:
+                        u[num] = {"episode":val} 
+                if pk.startswith("season-"):
+                    num = pk.split("-")[1]
+                    if num in u.keys():
+                        u[num]["season"] = val
+                    else:
+                        u[num] = {"season":val} 
+                if pk.startswith("showname-"):
+                    num = pk.split("-")[1]
+                    if num in u.keys():
+                        u[num]["showname"] = val
+                    else:
+                        u[num] = {"showname":val} 
+                if pk.startswith("filename-"):
+                    num = pk.split("-")[1]
+                    if num in u.keys():
+                        u[num]["filename"] = val
+                    else:
+                        u[num] = {"filename":val}
+                if pk.startswith("delete-"):
+                    num = pk.split("-")[1]
+                    if val=="on":
+                        val = True
+                    else:
+                        val = False
+                    if num in u.keys():
+                        u[num]["delete"] = val
+                    else:
+                        u[num] = {"delete":val}
+            updates = []
+            for n in u.keys():
+                val = u[n]
+                if not "delete" in val.keys():
+                    val["delete"] = False
+                updates.append(val)
+            invalidNames.update(updates) 
+        redirect("/manage/nameExceptions/")
+        
+        
     @cherrypy.expose
     def massEdit(self, toEdit=None):
 
@@ -952,6 +1021,7 @@ class ConfigSearch:
     @cherrypy.expose
     def saveSearch(self, use_nzbs=None, use_torrents=None, nzb_dir=None, sab_username=None, sab_password=None,
                        sab_apikey=None, sab_category=None, sab_host=None, nzbget_password=None, nzbget_category=None, nzbget_host=None,
+                       doc_use_names=None, spec_use_names=None, other_use_names=None,
                        nzb_method=None, torrent_method=None, usenet_retention=None, search_frequency=None, download_propers=None, allow_high_priority=None,
                        torrent_dir=None, torrent_username=None, torrent_password=None, torrent_host=None, torrent_label=None, torrent_path=None, 
                        torrent_ratio=None, torrent_paused=None, torrent_high_bandwidth=None, ignore_words=None):
@@ -976,6 +1046,21 @@ class ConfigSearch:
         else:
             allow_high_priority = 0
 
+        if doc_use_names == "on":
+            doc_use_names = 1
+        else:
+            doc_use_names = 0
+
+        if spec_use_names == "on":
+            spec_use_names = 1
+        else:
+            spec_use_names = 0
+
+        if other_use_names == "on":
+            other_use_names = 1
+        else:
+            other_use_names = 0
+
         if use_nzbs == "on":
             use_nzbs = 1
         else:
@@ -991,6 +1076,10 @@ class ConfigSearch:
 
         if ignore_words == None:
             ignore_words = ""
+
+        sickbeard.DOC_USE_NAMES = doc_use_names
+        sickbeard.SPEC_USE_NAMES = spec_use_names
+        sickbeard.OTHER_USE_NAMES = other_use_names
 
         sickbeard.USE_NZBS = use_nzbs
         sickbeard.USE_TORRENTS = use_torrents
@@ -1070,7 +1159,7 @@ class ConfigPostProcessing:
     def savePostProcessing(self, naming_pattern=None, naming_multi_ep=None,
                     xbmc_data=None, mediabrowser_data=None, synology_data=None, sony_ps3_data=None, wdtv_data=None, tivo_data=None, mede8er_data=None,
                     use_banner=None, keep_processed_dir=None, process_automatically=None, rename_episodes=None,
-                    move_associated_files=None, tv_download_dir=None, naming_custom_abd=None, naming_abd_pattern=None, naming_strip_year=None):
+                    move_associated_files=None, tv_download_dir=None, naming_custom_abd=None, naming_abd_pattern=None, naming_strip_year=None,always_rename_episodes=None):
 
         results = []
 
@@ -1091,6 +1180,11 @@ class ConfigPostProcessing:
             rename_episodes = 1
         else:
             rename_episodes = 0
+
+        if always_rename_episodes == "on":
+            always_rename_episodes = 1
+        else:
+            always_rename_episodes = 0
 
         if keep_processed_dir == "on":
             keep_processed_dir = 1
@@ -1118,6 +1212,7 @@ class ConfigPostProcessing:
         sickbeard.MOVE_ASSOCIATED_FILES = move_associated_files
         sickbeard.NAMING_CUSTOM_ABD = naming_custom_abd
         sickbeard.NAMING_STRIP_YEAR = naming_strip_year
+        sickbeard.AUTO_RENAME = always_rename_episodes
 
         sickbeard.metadata_provider_dict['XBMC'].set_config(xbmc_data)
         sickbeard.metadata_provider_dict['MediaBrowser'].set_config(mediabrowser_data)
@@ -2842,6 +2937,34 @@ class Home:
             return _genericMessage("Update Failed","Update wasn't successful, not restarting. Check your log for more information.")
 
     @cherrypy.expose
+    def displayEpisode(self, episode=None):
+        if episode == None:
+            return _genericMessage("Error", "Invalid show ID")
+        else:
+            episodeObj = sickbeard.helpers.findCertainEpisode(sickbeard.showList, episode)
+            if episodeObj == None:
+                return _genericMessage("Error", "Episode not available.")
+
+            showObj = episodeObj.show
+            if showObj == None:
+                return _genericMessage("Error", "Show not in show list")
+
+        showObj.exceptions = scene_exceptions.get_scene_exceptions(showObj.tvdbid)
+        t = PageTemplate(file="displayEpisode.tmpl")
+        t.submenu = [{'title': 'Back to Show', 'path': 'home/displayShow?show=%d'%showObj.tvdbid}]
+        t.show = showObj
+        t.episode = episodeObj
+        t.show_message = ""
+        t.names = episodeParser.episode_parser.getNames(episodeObj)
+        t.names = sorted(t.names,key=lambda k: k[1])
+        # FIXME: shouldn't this be part of TV_Show?
+        try:
+            t.showLoc = (showObj.location, True)
+        except sickbeard.exceptions.ShowDirNotFoundException:
+            t.showLoc = (showObj._location, False)
+        return _munge(t)
+
+    @cherrypy.expose
     def displayShow(self, show=None):
 
         if show == None:
@@ -2852,7 +2975,7 @@ class Home:
             if showObj == None:
                 return _genericMessage("Error", "Show not in show list")
 
-        showObj.exceptions = scene_exceptions.get_scene_exceptions(showObj.tvdbid)      
+        showObj.exceptions = scene_exceptions.get_scene_exceptions(showObj.tvdbid)
 
         myDB = db.DBConnection()
 
@@ -3290,6 +3413,8 @@ class Home:
     @cherrypy.expose
     def testRename(self, show=None):
 
+        import operator
+
         if show == None:
             return _genericMessage("Error", "You must specify a show")
 
@@ -3325,6 +3450,13 @@ class Home:
         if ep_obj_rename_list:
             # present season DESC episode DESC on screen
             ep_obj_rename_list.reverse()
+            ep_obj_rename_set = set(ep_obj_rename_list)
+            try:
+                sorter = lambda info: "{:02d}-{:02d}".format(info.season,info.episode)
+                ep_id = lambda ep: ep.episode
+                ep_obj_rename_list = [ x for x in sorted(ep_obj_rename_set,key=sorter) if x.relatedEps == [] or x.episode < min(x.relatedEps,key=ep_id).episode ]
+            except Exception as e:
+                print("Unable to sort: %s" % e)
 
         t = PageTemplate(file="testRename.tmpl")
         t.submenu = [{'title': 'Edit', 'path': 'home/editShow?show=%d' % showObj.tvdbid}]
@@ -3510,6 +3642,7 @@ class WebInterface:
             default_image_name = 'banner.png'
 
         default_image_path = ek.ek(os.path.join, sickbeard.PROG_DIR, 'gui', 'slick', 'images', default_image_name)
+
         if show is None:
             return cherrypy.lib.static.serve_file(default_image_path, content_type="image/png")
         else:

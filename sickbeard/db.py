@@ -142,6 +142,10 @@ class DBConnection:
                 except sqlite3.DatabaseError, e:
                     logger.log(u"Fatal error executing query: " + ex(e), logger.ERROR)
                     raise
+                except Exception as e:
+                    logger.log(u"Uncaught fatal error executing query: " + ex(e), logger.ERROR)
+                    raise
+                    
     
             return sqlResult
 

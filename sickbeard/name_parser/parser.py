@@ -24,7 +24,10 @@ import regexes
 
 import sickbeard
 
-from sickbeard import logger
+from sickbeard import logger, invalidNames
+from sickbeard.name_parser import episodeParser
+
+# import subprocess
 
 class NameParser(object):
     def __init__(self, file_name=True):
@@ -67,6 +70,8 @@ class NameParser(object):
 
     def _parse_string(self, name):
         
+#	logger.log("XZY - Name: " + name , logger.DEBUG )
+
         if not name:
             return None
         
@@ -79,7 +84,13 @@ class NameParser(object):
             result = ParseResult(name)
             result.which_regex = [cur_regex_name]
             
+            if cur_regex_name.startswith("doc"):
+                result.is_Documentary = True
+            
             named_groups = match.groupdict().keys()
+
+            if 'channel_name' in named_groups:
+                result.channel_name = match.group('channel_name')
 
             if 'series_name' in named_groups:
                 result.series_name = match.group('series_name')
@@ -91,6 +102,8 @@ class NameParser(object):
                 if cur_regex_name == 'bare' and tmp_season in (19,20):
                     continue
                 result.season_number = tmp_season
+            elif result.is_Documentary:
+                result.season_number = 1
             
             if 'ep_num' in named_groups:
                 ep_num = self._convert_number(match.group('ep_num'))
@@ -178,7 +191,7 @@ class NameParser(object):
             
             return result
 
-    def parse(self, name):
+    def parse(self, name, source="Unknown",fullname=True,isFile=True):
         
         name = self._unicodify(name)
         
@@ -188,9 +201,13 @@ class NameParser(object):
 
         # break it into parts if there are any (dirname, file name, extension)
         dir_name, file_name = os.path.split(name)
-        ext_match = re.match('(.*)\.\w{3,4}$', file_name)
-        if ext_match and self.file_name:
-            base_file_name = ext_match.group(1)
+        
+        if fullname:
+            ext_match = re.match('(.*)\.\w{3,4}$', file_name)
+            if ext_match and self.file_name:
+                base_file_name = ext_match.group(1)
+            else:
+                base_file_name = file_name
         else:
             base_file_name = file_name
         
@@ -217,6 +234,7 @@ class NameParser(object):
         final_result.series_name = self._combine_results(dir_name_result, file_name_result, 'series_name')
         final_result.extra_info = self._combine_results(dir_name_result, file_name_result, 'extra_info')
         final_result.release_group = self._combine_results(dir_name_result, file_name_result, 'release_group')
+        final_result.is_Documentary = self._combine_results(dir_name_result, file_name_result, 'is_Documentary')
 
         final_result.which_regex = []
         if final_result == file_name_result:
@@ -229,9 +247,26 @@ class NameParser(object):
             if dir_name_result:
                 final_result.which_regex += dir_name_result.which_regex
 
-        # if there's no useful info in it then raise an exception
-        if final_result.season_number == None and not final_result.episode_numbers and final_result.air_date == None and not final_result.series_name:
-            raise InvalidNameException("Unable to parse "+name.encode(sickbeard.SYS_ENCODING, 'ignore'))
+        # if there's no useful info at all then we try the naming overrides, but only if we actually get a filename, not other parts
+        if isFile and (final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None):
+            x = invalidNames.findFile(base_file_name,show=final_result.series_name,snum=final_result.season_number,epnum=final_result.episode_numbers,source=source)
+            # overrrides override
+            if x["showname"] != None and x["showname"] != "": final_result.series_name = x["showname"] 
+            if x["season"] != None: final_result.season_number = x["season"]
+            if x["episode"] != None: final_result.episode_numbers = x["episode"]
+                
+        # if there's no useful info so far, we check the name based resolution, but only if we actually get a filename, not other parts
+        if isFile and (final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None):
+            episode = episodeParser.episode_parser.match(base_file_name)
+            if episode != None:
+                final_result.series_name = episode.show.name
+                final_result.episode_numbers = [episode.episode] + getattr(episode,"relatedEps",[])# TODO: support multiple episodes in one file
+                final_result.season_number = episode.season
+                
+        # if everything fails then raise an exception
+        # if final_result.season_number == None and not final_result.episode_numbers and final_result.air_date == None and not final_result.series_name:
+        if final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None:
+            raise InvalidNameException("Unable to parse "+name.encode(sickbeard.SYS_ENCODING))
 
         name_parser_cache.add(name, final_result)
         # return it
@@ -245,7 +280,9 @@ class ParseResult(object):
                  episode_numbers=None,
                  extra_info=None,
                  release_group=None,
-                 air_date=None
+                 air_date=None,
+                 channel_name=None,
+		 is_Documentary=False
                  ):
 
         self.original_name = original_name
@@ -263,6 +300,9 @@ class ParseResult(object):
         self.air_date = air_date
         
         self.which_regex = None
+        self.channel_name = channel_name
+        self.is_Documentary = is_Documentary
+
         
     def __eq__(self, other):
         if not other:
@@ -279,6 +319,10 @@ class ParseResult(object):
         if self.release_group != other.release_group:
             return False
         if self.air_date != other.air_date:
+            return False
+        if self.channel_name != other.channel_name:
+            return False
+        if self.is_Documentary != other.is_Documentary:
             return False
         
         return True

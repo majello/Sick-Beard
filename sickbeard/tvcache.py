@@ -91,7 +91,7 @@ class TVCache():
     def _checkItemAuth(self, title, url):
         return True
 
-    def updateCache(self):
+    def updateCache(self,source="Unknown"):
 
         if not self.shouldUpdate():
             return
@@ -125,12 +125,12 @@ class TVCache():
 
         for item in items:
 
-            self._parseItem(item)
+            self._parseItem(item,source)
 
     def _translateLinkURL(self, url):
         return url.replace('&amp;','&')
 
-    def _parseItem(self, item):
+    def _parseItem(self, item,source="Unknown"):
 
         title = helpers.get_xml_text(item.getElementsByTagName('title')[0])
         url = helpers.get_xml_text(item.getElementsByTagName('link')[0])
@@ -145,7 +145,7 @@ class TVCache():
 
         logger.log(u"Adding item from RSS to cache: "+title, logger.DEBUG)
 
-        self._addCacheEntry(title, url)
+        self._addCacheEntry(title, url, source=source)
 
     def _getLastUpdate(self):
         myDB = self._getDB()
@@ -178,17 +178,17 @@ class TVCache():
 
         return True
 
-    def _addCacheEntry(self, name, url, season=None, episodes=None, tvdb_id=0, tvrage_id=0, quality=None, extraNames=[]):
+    def _addCacheEntry(self, name, url, season=None, episodes=None, tvdb_id=0, tvrage_id=0, quality=None, extraNames=[], source="Unknown"):
 
         myDB = self._getDB()
 
         parse_result = None
-
+        
         # if we don't have complete info then parse the filename to get it
         for curName in [name] + extraNames:
             try:
                 myParser = NameParser()
-                parse_result = myParser.parse(curName)
+                parse_result = myParser.parse(curName,source)
             except InvalidNameException:
                 logger.log(u"Unable to parse the filename "+curName+" into a valid episode", logger.DEBUG)
                 continue
@@ -329,7 +329,7 @@ class TVCache():
         #return filter(lambda x: x['tvdbid'] != 0, myDB.select(sql))
         return myDB.select(sql)
 
-    def findNeededEpisodes(self, episode = None, manualSearch=False):
+    def findNeededEpisodes(self, episode = None, manualSearch=False,source="Unknown"): #
         neededEps = {}
 
         if episode:
@@ -346,7 +346,7 @@ class TVCache():
         for curResult in sqlResults:
 
             # skip non-tv crap (but allow them for Newzbin cause we assume it's filtered well)
-            if self.providerID != 'newzbin' and not show_name_helpers.filterBadReleases(curResult["name"]):
+            if self.providerID != 'newzbin' and not show_name_helpers.filterBadReleases(curResult["name"],source=source):
                 continue
 
             # get the show object, or if it's not one of our shows then ignore it

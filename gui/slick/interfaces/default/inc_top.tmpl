@@ -56,6 +56,7 @@
     <script type="text/javascript" src="$sbRoot/js/lib/jquery.pnotify-1.0.2.min.js"></script>
 	<script type="text/javascript" src="$sbRoot/js/lib/jquery.expand-1.3.8.js?$sbPID"></script>
     <script type="text/javascript" src="$sbRoot/js/lib/jquery.form-2.92.js?$sbPID"></script>
+    <script type="text/javascript" src="$sbRoot/js/lib/jquery.lazyload.min.js?$sbPID"></script>
 	<script type="text/javascript" src="$sbRoot/js/script.js?$sbPID"></script>
 
     <script type="text/javascript" charset="utf-8">
@@ -180,6 +181,7 @@
                             <li><a href="$sbRoot/manage/backlogOverview/"><img src="$sbRoot/images/menu/backlog_view16.png" alt="" width="16" height="16" />Backlog Overview</a></li>
                             <li><a href="$sbRoot/manage/manageSearches/"><img src="$sbRoot/images/menu/managesearches16.png" alt="" width="16" height="16" />Manage Searches</a></li>
                             <li><a href="$sbRoot/manage/episodeStatuses/"><img src="$sbRoot/images/menu/backlog16.png" alt="" width="16" height="16" />Episode Status Management</a></li>
+                            <li><a href="$sbRoot/manage/nameExceptions/"><img src="$sbRoot/images/menu/config16.png" alt="" width="16" height="16" />File Name Exceptions</a></li>
                             #if $sickbeard.USE_SUBTITLES:
                             <li><a href="$sbRoot/manage/subtitleMissed/"><img src="$sbRoot/images/menu/backlog16.png" alt="" width="16" height="16" />Missed Subtitle Management</a></li>
                             #end if
@@ -213,6 +215,7 @@
 <div id="contentWrapper">
     <div id="content">
     	#if $varExists('submenu'):
+    	<!-- $submenu --> 
     	<div id="SubMenu">
     	<span>
     	#set $first = True

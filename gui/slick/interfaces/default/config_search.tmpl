@@ -89,6 +89,30 @@
                                 <span class="component-desc">Set high priority for downloads of recently aired episodes?</span>
                             </label>
                         </div>
+                        
+                        <div class="field-pair">
+                            <input type="checkbox" name="doc_use_names" id="doc_use_names" #if $sickbeard.DOC_USE_NAMES == True then "checked=\"checked\"" else ""# />
+                            <label class="clearfix" for="doc_use_names">
+                                <span class="component-title">Use episode names for Documentaries</span>
+                                <span class="component-desc">For documentaries, when identifying episodes, use episode names?</span>
+                            </label>
+                        </div>
+                        
+                        <div class="field-pair">
+                            <input type="checkbox" name="spec_use_names" id="spec_use_names" #if $sickbeard.SPEC_USE_NAMES == True then "checked=\"checked\"" else ""# />
+                            <label class="clearfix" for="spec_use_names">
+                                <span class="component-title">Use episode names for Specials</span>
+                                <span class="component-desc">For specials (season 0), when identifying episodes, use episode names?</span>
+                            </label>
+                        </div>                        
+
+                        <div class="field-pair">
+                            <input type="checkbox" name="other_use_names" id="spec_use_names" #if $sickbeard.OTHER_USE_NAMES == True then "checked=\"checked\"" else ""# />
+                            <label class="clearfix" for="other_use_names">
+                                <span class="component-title">Use episode names for all other episodes</span>
+                                <span class="component-desc">For all other episode types, when identifying episodes, use episode names?</span>
+                            </label>
+                        </div>
 
                         <div class="clearfix"></div>
                         <input type="submit" class="btn config_submitter" value="Save Changes" /><br/>

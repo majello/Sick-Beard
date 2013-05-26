@@ -39,6 +39,8 @@ from sickbeard import providers
 
 from sickbeard.exceptions import ex
 from sickbeard.providers.generic import GenericProvider
+from sickbeard.name_parser import episodeParser
+
 
 
 def _downloadResult(result):
@@ -273,6 +275,54 @@ def isFinalResult(result):
     else:
         return False
 
+#
+# in this case we have already determined the search names
+#
+def findEpisodeByName(episode, manualSearch=False):
+
+    logger.log(u"Searching by name for " + str(episode.name))
+
+    foundResults = []
+
+    allNames = episodeParser.episode_parser.getNames(episode)
+    searchNames = [x[3] for x in allNames if x[2] >= 10 or x[2] <= 0]
+
+    didSearch = False
+
+    for curProvider in providers.sortedProviderList():
+
+        if not curProvider.isActive():
+            continue
+
+        try:
+            curFoundResults = curProvider.findEpisodebyName(episode,searchNames,allNames,manualSearch=manualSearch)
+        except exceptions.AuthException, e:
+            logger.log(u"Authentication error: "+ex(e), logger.ERROR)
+            continue
+        except AttributeError as e:
+            # not everybody implements this
+            logger.log(traceback.format_exc(), logger.ERROR)
+            continue
+        except Exception, e:
+            logger.log(u"Error while searching "+curProvider.name+", skipping: "+ex(e), logger.ERROR)
+            logger.log(traceback.format_exc(), logger.DEBUG)
+            continue
+
+        didSearch = True
+
+        # skip non-tv crap will be skipped later on
+        # curFoundResults = filter(lambda x: show_name_helpers.filterBadReleases(x.name) and show_name_helpers.isGoodResult(x.name, episode.show), curFoundResults)        
+        foundResults += curFoundResults
+
+
+    if not didSearch:
+        logger.log(u"No NZB/Torrent providers found or enabled in the sickbeard config. Please check your settings.", logger.ERROR)
+
+    bestResult = pickBestResult(foundResults)
+    if bestResult == None:
+        return []
+    else:
+        return bestResult
 
 def findEpisode(episode, manualSearch=False):
 

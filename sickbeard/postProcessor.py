@@ -37,6 +37,7 @@ from sickbeard import logger
 from sickbeard import notifiers
 from sickbeard import show_name_helpers
 from sickbeard import scene_exceptions
+from sickbeard import invalidNames
 
 from sickbeard import encodingKludge as ek
 from sickbeard.exceptions import ex
@@ -371,7 +372,7 @@ class PostProcessor(object):
         self.in_history = False
         return to_return
     
-    def _analyze_name(self, name, file=True):
+    def _analyze_name(self, name, file=True,isFile=False):
         """
         Takes a name and tries to figure out a show, season, and episode from it.
         
@@ -381,7 +382,7 @@ class PostProcessor(object):
         if none were found.
         """
 
-        logger.log(u"Analyzing name "+repr(name))
+        logger.log(u"(%s) Analyzing name %s" % (str(isFile),repr(name)))
     
         to_return = (None, None, [])
     
@@ -390,7 +391,12 @@ class PostProcessor(object):
     
         # parse the name to break it into show name, season, and episode
         np = NameParser(file)
-        parse_result = np.parse(name)
+        try:
+            parse_result = np.parse(name,source="Postprocessor",isFile=isFile)
+        except Exception as e:
+            raise
+        else:
+            logger.log("Name \"%s\" recognized: %s" % (name,parse_result))
         self._log("Parsed "+name+" into "+str(parse_result).decode('utf-8'), logger.DEBUG)
 
         if parse_result.air_by_date:
@@ -500,7 +506,7 @@ class PostProcessor(object):
                         lambda: self._analyze_name(self.nzb_name),
     
                         # try to analyze the file name
-                        lambda: self._analyze_name(self.file_name),
+                        lambda: self._analyze_name(self.file_name,isFile=True),
 
                         # try to analyze the dir name
                         lambda: self._analyze_name(self.folder_name),
@@ -879,6 +885,8 @@ class PostProcessor(object):
                 self._move(self.file_path, dest_path, new_base_name, sickbeard.MOVE_ASSOCIATED_FILES, sickbeard.USE_SUBTITLES and ep_obj.show.subtitles)
         except (OSError, IOError):
             raise exceptions.PostProcessingFailed("Unable to move the files to their new home")
+        else:
+            invalidNames.remove(self.file_path,"successfull postprocessing")
 
         # put the new location in the database
         for cur_ep in [ep_obj] + ep_obj.relatedEps:

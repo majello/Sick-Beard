@@ -46,6 +46,7 @@ from sickbeard import notifiers
 from sickbeard import postProcessor
 from sickbeard import subtitles
 from sickbeard import history
+from sickbeard import invalidNames
 
 from sickbeard import encodingKludge as ek
 
@@ -253,7 +254,7 @@ class TVShow(object):
 
             logger.log(str(self.tvdbid) + ": Creating episode from " + mediaFile, logger.DEBUG)
             try:
-                curEpisode = self.makeEpFromFile(ek.ek(os.path.join, self._location, mediaFile))
+                curEpisode = self.makeEpFromFile(ek.ek(os.path.join, self._location, mediaFile),"Filesystem")
             except (exceptions.ShowNotFoundException, exceptions.EpisodeNotFoundException), e:
                 logger.log(u"Episode "+mediaFile+" returned an exception: "+ex(e), logger.ERROR)
                 continue
@@ -443,7 +444,7 @@ class TVShow(object):
 
 
     # make a TVEpisode object from a media file
-    def makeEpFromFile(self, file):
+    def makeEpFromFile(self, file, source="Unknown"):
 
         if not ek.ek(os.path.isfile, file):
             logger.log(str(self.tvdbid) + ": That isn't even a real file dude... " + file)
@@ -453,11 +454,17 @@ class TVShow(object):
 
         try:
             myParser = NameParser()
-            parse_result = myParser.parse(file)
+            parse_result = myParser.parse(file,source)
         except InvalidNameException:
             logger.log(u"Unable to parse the filename "+file+" into a valid episode", logger.ERROR)
             return None
-
+        
+        if parse_result.series_name != self.name and parse_result.series_name != "" and parse_result.series_name != None:
+            # TODO: send to file exceptions and mark for move
+            logger.log("parse_result: "+str(parse_result))
+            logger.log(u"File %s (%s), does not belong to %s" % (file,parse_result.series_name,self.name), logger.ERROR)
+            return None
+        
         if len(parse_result.episode_numbers) == 0 and not parse_result.air_by_date:
             logger.log("parse_result: "+str(parse_result))
             logger.log(u"No episode number found in "+file+", ignoring it", logger.ERROR)
@@ -1678,7 +1685,7 @@ class TVEpisode(object):
             np = NameParser(name)
 
             try:
-                parse_result = np.parse(name)
+                parse_result = np.parse(name,isFile=False)
             except InvalidNameException, e:
                 logger.log(u"Unable to get parse release_group: "+ex(e), logger.DEBUG)
                 return ''
@@ -1919,6 +1926,12 @@ class TVEpisode(object):
         in the naming settings.
         """
 
+        orig_name = self.location
+        
+        if not ek.ek(os.path.isfile, self.location):
+            logger.log(u"Can't perform rename on " + self.location + " when it doesn't exist, skipping", logger.WARNING)
+            return
+
         proper_path = self.proper_path()
         absolute_proper_path = ek.ek(os.path.join, self.show.location, proper_path)
         absolute_current_path_no_ext, file_ext = os.path.splitext(self.location)
@@ -1975,3 +1988,6 @@ class TVEpisode(object):
             self.saveToDB()
             for relEp in self.relatedEps:
                 relEp.saveToDB()
+                
+        # remove from name exceptions
+        invalidNames.remove(orig_name,"file rename by refresh")

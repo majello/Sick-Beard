@@ -223,8 +223,10 @@
     <td class="title">
     #if $epResult["description"] != "" and $epResult["description"] != None:
     <img style="padding-top: 3px;" src="$sbRoot/images/info32.png" height="16" class="plotInfo" alt="" id="plot_info_$show.tvdbid<%="_"+str(epResult["season"])+"_"+str(epResult["episode"])%>" />
-	#end if    
+	#end if
+    <a href="displayEpisode?episode=${epResult["tvdbid"]}">
     $epResult["name"]
+    </a>
 </td>
     <td align="center" class="nowrap">#if int($epResult["airdate"]) == 1 then "never" else $datetime.date.fromordinal(int($epResult["airdate"]))#</td>
     <td class="filename"><small>

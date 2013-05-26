@@ -35,6 +35,7 @@ from sickbeard.exceptions import ex
 
 from lib.hachoir_parser import createParser
 
+from sickbeard.name_parser import episodeParser
 from sickbeard.name_parser.parser import NameParser, InvalidNameException
 
 class GenericProvider:
@@ -173,8 +174,9 @@ class GenericProvider:
         return True
 
     def searchRSS(self):
+#        self.cache.updateCache(source="RSS")
         self.cache.updateCache()
-        return self.cache.findNeededEpisodes()
+        return self.cache.findNeededEpisodes(source="RSS") 
 
     def getQuality(self, item):
         """
@@ -197,6 +199,9 @@ class GenericProvider:
     def _get_episode_search_strings(self, ep_obj):
         return []
     
+    def _get_name_search_strings(self, names):
+        return []
+    
     def _get_title_and_url(self, item):
         """
         Retrieves the title and URL data from the item XML node
@@ -214,6 +219,54 @@ class GenericProvider:
             url = None
         
         return (title, url)
+
+    def findEpisodebyName(self, episode,names, filters, manualSearch=False):
+        self._checkAuth()
+
+        logger.log(u"Searching "+self.name+" for " + episode.prettyName())
+
+        # TODO: Look at cache logic
+        results = []
+#        self.cache.updateCache(source="Episode Name Search")
+#        results = self.cache.searchCache(episode, manualSearch)
+#        logger.log(u"Cache results: "+str(results), logger.DEBUG)
+
+        # if we got some results then use them no matter what.
+        # OR
+        # return anyway unless we're doing a manual search
+#        if results or not manualSearch:
+#            return results
+
+        itemList = []
+
+        for cur_search_string in self._get_name_search_strings(names):
+            itemList += self._doSearch(cur_search_string, show=episode.show)
+
+        for item in itemList:
+
+            (title, url) = self._get_title_and_url(item)
+
+            # hit the parser
+            parse_result = episodeParser.episode_parser.matchNames(title, filters)
+            if parse_result == None or parse_result == []:
+                continue
+
+            quality = self.getQuality(item)
+
+            if not episode.show.wantEpisode(episode.season, episode.episode, quality, manualSearch):
+                logger.log(u"Ignoring result "+title+" because we don't want an episode that is "+Quality.qualityStrings[quality], logger.MESSAGE)
+                continue
+
+            logger.log(u"Found result " + title + " at " + url, logger.DEBUG)
+
+            result = self.getResult([episode])
+            result.url = url
+            result.name = title
+            result.quality = quality
+
+            results.append(result)
+
+        return results
     
     def findEpisode(self, episode, manualSearch=False):
 
@@ -221,7 +274,7 @@ class GenericProvider:
 
         logger.log(u"Searching "+self.name+" for " + episode.prettyName())
 
-        self.cache.updateCache()
+        self.cache.updateCache(source="Episode Search")
         results = self.cache.searchCache(episode, manualSearch)
         logger.log(u"Cache results: "+str(results), logger.DEBUG)
 

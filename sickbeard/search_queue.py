@@ -26,6 +26,7 @@ from sickbeard import db, logger, common, exceptions, helpers
 from sickbeard import generic_queue
 from sickbeard import search
 from sickbeard import ui
+from sickbeard.name_parser import episodeParser
 
 BACKLOG_SEARCH = 10
 RSS_SEARCH = 20
@@ -182,7 +183,7 @@ class BacklogQueueItem(generic_queue.QueueItem):
 
         # see if there is anything in this season worth searching for
         if not self.show.air_by_date:
-            statusResults = myDB.select("SELECT status FROM tv_episodes WHERE showid = ? AND season = ?", [self.show.tvdbid, self.segment])
+            statusResults = myDB.select("SELECT status, episode FROM tv_episodes WHERE showid = ? AND season = ?", [self.show.tvdbid, self.segment])
         else:
             segment_year, segment_month = map(int, self.segment.split('-'))
             min_date = datetime.date(segment_year, segment_month, 1)
@@ -193,17 +194,30 @@ class BacklogQueueItem(generic_queue.QueueItem):
             else:
                 max_date = datetime.date(segment_year, segment_month+1, 1) - datetime.timedelta(days=1)
 
-            statusResults = myDB.select("SELECT status FROM tv_episodes WHERE showid = ? AND airdate >= ? AND airdate <= ?",
+            statusResults = myDB.select("SELECT status, episode FROM tv_episodes WHERE showid = ? AND airdate >= ? AND airdate <= ?",
                                         [self.show.tvdbid, min_date.toordinal(), max_date.toordinal()])
-            
+
         anyQualities, bestQualities = common.Quality.splitQuality(self.show.quality) #@UnusedVariable
         self.wantSeason = self._need_any_episodes(statusResults, bestQualities)
 
     def execute(self):
-        
+
         generic_queue.QueueItem.execute(self)
 
         results = search.findSeason(self.show, self.segment)
+
+        # no other result, not air by date and relevant options are on:
+        if results == [] and not self.show.air_by_date and \
+           ((sickbeard.DOC_USE_NAMES and "documentary" in self.show.genre.lower()) or \
+            (sickbeard.SPEC_USE_NAMES and self.segment == 0)):
+            # walk the episode list, get the episode object and search
+            for epnum in self.epList:
+                epObj = self.show.getEpisode(self.segment, epnum, file=None, noCreate=False)
+                results += search.findEpisodeByName(epObj)
+
+        # we tried it the simple way, call the bridge
+        if results == []:
+            results = self._findByName()
 
         # download whatever we find
         for curResult in results:
@@ -213,10 +227,11 @@ class BacklogQueueItem(generic_queue.QueueItem):
         self.finish()
 
     def _need_any_episodes(self, statusResults, bestQualities):
+        return self._findWanted(statusResults, bestQualities) != []
 
-        wantSeason = False
-        
+    def _findWanted(self,statusResults,bestQualities):
         # check through the list of statuses to see if we want any
+        result = []
         for curStatusResult in statusResults:
             curCompositeStatus = int(curStatusResult["status"])
             curStatus, curQuality = common.Quality.splitCompositeStatus(curCompositeStatus)
@@ -228,7 +243,16 @@ class BacklogQueueItem(generic_queue.QueueItem):
 
             # if we need a better one then say yes
             if (curStatus in (common.DOWNLOADED, common.SNATCHED, common.SNATCHED_PROPER) and curQuality < highestBestQuality) or curStatus == common.WANTED:
-                wantSeason = True
-                break
+                result += [int(curStatusResult["episode"])]
 
-        return wantSeason
+        self.epList = result
+        return result
+
+    def _findByName(self):
+        result = []
+        if not self.show.air_by_date:
+            # we don't do air-by-date
+            for epnum in self.epList:
+                epObj = self.show.getEpisode(self.segment, epnum, file=None, noCreate=False)
+                result += search.findEpisodeByName(epObj)
+        return result

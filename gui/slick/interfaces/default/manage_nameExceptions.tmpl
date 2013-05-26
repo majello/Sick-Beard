@@ -1,0 +1,75 @@
+#import sickbeard
+#import datetime
+#from sickbeard.common import *
+#set global $title="Manage Invalid Filenames"
+#set global $header="Manage Invalid Filenames"
+#set global $sbPath=".."
+
+#set global $topmenu="manage"#
+#import os.path
+#include $os.path.join($sickbeard.PROG_DIR, "gui/slick/interfaces/default/inc_top.tmpl")
+
+<script type="text/javascript" src="$sbRoot/js/plotTooltip.js?$sbPID"></script>
+   #if $varExists('header') 
+   	<h1 class="header">$header</h1>
+   #else 
+   	<h1 class="title">$title</h1>
+   #end if
+
+<form name="nameExceptionForm" method="post" action="../nameExceptionsSubmit">
+
+<table id="nameExceptionTable" class="sickbeardTable" style='table-layout:fixed' cellspacing="1" border="0" cellpadding="0">
+  <thead>
+    <tr>
+        <th width="2%">Delete</th>
+    	<th width="38%">Filename</th>
+    	<th width="20%">Show Name</th>
+    	<th width="10%">Season Number</th>
+    	<th width="10%">Episode Number(s)</th>
+        <th width="10%">Source</th>
+        <th width="10%">Age</th>
+	</tr>
+  </thead>
+  <tbody>
+#for $curNum in $filenames.keys():
+<%
+curFile = self.filenames[curNum]
+test=1
+%>
+	<tr>
+        <td><input type="checkbox" name="delete-${curNum}"></td>
+		<td class="nowrap" style="overflow:hidden;border:4px"><input type="hidden" name="filename-${curNum}" value="${curFile['filename']}" size=60>${curFile['filename']}</td>
+		<td>
+			<select name="showname-${curNum}" style="width:100%">
+			#for sh in $show_list:
+                <!-- ${sh} -->
+<%
+if curFile['showname'] == sh[1]:
+   selected = "selected=\"selected\""
+else:
+   selected = ""
+%>
+				<option value="${sh[1]}" ${selected}>${sh[1]}</option>
+			#end for
+			</select>
+		</td>
+		<td><input type="text" name="season-${curNum}" value="${curFile['season']}" size=5></td>
+		<td><input type="text" name="episode-${curNum}" value="${curFile['episode']}" size=8></td>
+        <td>${curFile['source']}</td>
+        <td class="nowrap">${curFile['age']}</td>
+	</tr>
+#end for  	
+  </tbody>
+  <tfoot>
+	<tr>
+      <td rowspan="1" colspan="7" class="align-right alt">
+        <input type="submit" class="btn" value="Expunge" name="action" id="Expunge" />
+        <input type="submit" class="btn" value="Parse Names" name="action" id="TryNameParser" />
+      	<input type="submit" class="btn btn-primary" value="Submit" name="action" id="submitNameExceptions" />
+      </td>
+	</tr>
+  </tfoot>
+</table>
+
+</form>
+#include $os.path.join($sickbeard.PROG_DIR, "gui/slick/interfaces/default/inc_bottom.tmpl")

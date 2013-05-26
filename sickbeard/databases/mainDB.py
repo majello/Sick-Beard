@@ -711,3 +711,41 @@ class AddEmailSubscriptionTable(AddProperNamingSupport):
     def execute(self):
         self.addColumn('tv_shows', 'notify_list', 'TEXT', None)
         self.incDBVersion()
+
+class SpecializedNames (AddEmailSubscriptionTable):
+    def test(self):
+        return self.hasTable("file_exceptions")
+
+    def execute(self):
+        queries = [
+            "CREATE TABLE file_exceptions (filename TEXT PRIMARY KEY, showname TEXT, season TEXT, episode text)",
+        ]
+        for query in queries:
+            self.connection.action(query)
+
+class NamePrefixes (SpecializedNames):
+    def test(self):
+        return self.hasTable("name_prefix")
+
+    def execute(self):
+        queries = [
+            "CREATE TABLE name_prefix (prefix TEXT PRIMARY KEY, prefixCategory TEXT, usage TEXT)",
+        ]
+        for query in queries:
+            self.connection.action(query)
+
+class AddShowToSpecializedNames (NamePrefixes):
+    def test(self):
+        return self.hasColumn("file_exceptions", "showname")
+
+    def execute(self):
+        self.addColumn("file_exceptions", "showname", "TEXT", "")
+
+class AddShowToSpecializedNamesInfo (AddShowToSpecializedNames):
+    def test(self):
+        return self.hasColumn("file_exceptions", "source")
+
+    def execute(self):
+        self.addColumn("file_exceptions", "source", "TEXT", "")
+        self.addColumn("file_exceptions", "stamp", "INTEGER", 0)
+

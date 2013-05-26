@@ -38,6 +38,7 @@ from sickbeard import searchCurrent, searchBacklog, showUpdater, versionChecker,
 from sickbeard import helpers, db, exceptions, show_queue, search_queue, scheduler
 from sickbeard import logger
 from sickbeard import naming
+from sickbeard import invalidNames
 
 from common import SD, SKIPPED, NAMING_REPEAT
 
@@ -78,6 +79,7 @@ properFinderScheduler = None
 autoPostProcesserScheduler = None
 subtitlesFinderScheduler = None
 traktWatchListCheckerSchedular = None
+nameExceptionScheduler = None
 
 showList = None
 loadingShowList = None
@@ -402,6 +404,12 @@ SUBTITLES_SERVICES_LIST = []
 SUBTITLES_SERVICES_ENABLED = []
 SUBTITLES_HISTORY = False
 
+# Doc Branch Features
+AUTO_RENAME = False     # Automatically Rename during library scan
+DOC_USE_NAMES=False     # Use episode name based parser for documentaries
+SPEC_USE_NAMES=False    # Use episode name based parser for specials (season 0)
+OTHER_USE_NAMES=False    # Use episode name based parser for specials (season 0)
+
 EXTRA_SCRIPTS = []
 
 GIT_PATH = None
@@ -454,6 +462,7 @@ def initialize(consoleLogging=True):
                 USE_EMAIL, EMAIL_HOST, EMAIL_PORT, EMAIL_TLS, EMAIL_USER, EMAIL_PASSWORD, EMAIL_FROM, EMAIL_NOTIFY_ONSNATCH, EMAIL_NOTIFY_ONDOWNLOAD, EMAIL_NOTIFY_ONSUBTITLEDOWNLOAD, EMAIL_LIST, \
                 USE_BANNER, USE_LISTVIEW, METADATA_XBMC, METADATA_MEDIABROWSER, METADATA_PS3, METADATA_SYNOLOGY, METADATA_MEDE8ER, metadata_provider_dict, \
                 NEWZBIN, NEWZBIN_USERNAME, NEWZBIN_PASSWORD, GIT_PATH, MOVE_ASSOCIATED_FILES, \
+                AUTO_RENAME, DOC_USE_NAMES,SPEC_USE_NAMES, OTHER_USE_NAMES, nameExceptionScheduler, \
                 GUI_NAME, HOME_LAYOUT, DISPLAY_SHOW_SPECIALS, COMING_EPS_LAYOUT, COMING_EPS_SORT, COMING_EPS_DISPLAY_PAUSED, COMING_EPS_MISSED_RANGE, METADATA_WDTV, METADATA_TIVO, IGNORE_WORDS, CREATE_MISSING_SHOW_DIRS, \
                 ADD_SHOWS_WO_DIR, USE_SUBTITLES, SUBTITLES_LANGUAGES, SUBTITLES_DIR, SUBTITLES_SERVICES_LIST, SUBTITLES_SERVICES_ENABLED, SUBTITLES_HISTORY, subtitlesFinderScheduler
 
@@ -887,6 +896,11 @@ def initialize(consoleLogging=True):
         COMING_EPS_SORT = check_setting_str(CFG, 'GUI', 'coming_eps_sort', 'date')
         COMING_EPS_MISSED_RANGE = check_setting_int(CFG, 'GUI', 'coming_eps_missed_range', 7)
 
+        AUTO_RENAME = bool(check_setting_int(CFG,"General","auto_rename",0))
+        DOC_USE_NAMES = bool(check_setting_int(CFG,"General","documentaries_use_names",0))
+        SPEC_USE_NAMES = bool(check_setting_int(CFG,"General","specials_use_names",0))
+        OTHER_USE_NAMES = bool(check_setting_int(CFG,"General","other_use_names",0))
+
         newznabData = check_setting_str(CFG, 'Newznab', 'newznab_data', '')
         newznabProviderList = providers.getNewznabProviderList(newznabData)
         providerList = providers.makeProviderList()
@@ -940,6 +954,12 @@ def initialize(consoleLogging=True):
                                                      threadName="FINDPROPERS",
                                                      runImmediately=False)
 
+        invalidNamesInstance = invalidNames.InvalidNamesProcesser()
+        nameExceptionScheduler = scheduler.Scheduler(invalidNamesInstance,
+                                                     cycleTime=datetime.timedelta(minutes=10),
+                                                     threadName="INVALIDNAMES",
+                                                     runImmediately=True)
+
         autoPostProcesserScheduler = scheduler.Scheduler(autoPostProcesser.PostProcesser(),
                                                      cycleTime=datetime.timedelta(minutes=10),
                                                      threadName="POSTPROCESSER",
@@ -974,6 +994,7 @@ def start():
             showUpdateScheduler, versionCheckScheduler, showQueueScheduler, \
             properFinderScheduler, autoPostProcesserScheduler, searchQueueScheduler, \
             subtitlesFinderScheduler, started, USE_SUBTITLES, \
+            nameExceptionScheduler, \
             traktWatchListCheckerSchedular, started
 
     with INIT_LOCK:
@@ -998,6 +1019,9 @@ def start():
             # start the search queue checker
             searchQueueScheduler.thread.start()
 
+            # start the name exceptions cleaner
+            nameExceptionScheduler.thread.start()
+
             # start the queue checker
             properFinderScheduler.thread.start()
 
@@ -1017,6 +1041,7 @@ def halt ():
 
     global __INITIALIZED__, currentSearchScheduler, backlogSearchScheduler, showUpdateScheduler, \
             showQueueScheduler, properFinderScheduler, autoPostProcesserScheduler, searchQueueScheduler, \
+            nameExceptionScheduler, \
             subtitlesFinderScheduler, started, \
             traktWatchListCheckerSchedular
 
@@ -1067,6 +1092,13 @@ def halt ():
             logger.log(u"Waiting for the SEARCHQUEUE thread to exit")
             try:
                 searchQueueScheduler.thread.join(10)
+            except:
+                pass
+
+            nameExceptionScheduler.abort = True
+            logger.log(u"Waiting for the INVALIDNAMES thread to exit")
+            try:
+                nameExceptionScheduler.thread.join(10)
             except:
                 pass
 
@@ -1516,6 +1548,11 @@ def save_config():
     new_config['Subtitles']['subtitles_dir'] = SUBTITLES_DIR
     new_config['Subtitles']['subtitles_default'] = int(SUBTITLES_DEFAULT)
     new_config['Subtitles']['subtitles_history'] = int(SUBTITLES_HISTORY)
+
+    new_config['General']['auto_rename'] = int(AUTO_RENAME)
+    new_config['General']['documentaries_use_names'] = int(DOC_USE_NAMES)
+    new_config['General']['specials_use_names'] = int(SPEC_USE_NAMES)
+    new_config['General']['other_use_names'] = int(OTHER_USE_NAMES)
 
     new_config['General']['config_version'] = CONFIG_VERSION
 

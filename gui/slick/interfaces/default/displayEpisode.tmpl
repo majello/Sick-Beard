@@ -1,0 +1,145 @@
+#import sickbeard
+#import sickbeard.helpers
+#from sickbeard.common import *
+#import os.path, os
+#import datetime
+#set global $title=$show.name
+#set global $header = '<a href="http://thetvdb.com/?tab=series&amp;id=%d" target="_new">%s</a>' % ($show.tvdbid, $show.name)
+#set global $topmenu="manageShows"#
+#set $exceptions_string = " | ".join($show.exceptions)
+#include $os.path.join($sickbeard.PROG_DIR, "gui/slick/interfaces/default/inc_top.tmpl")
+
+<script type="text/javascript" src="$sbRoot/js/jquery.bookmarkscroll.js?$sbPID"></script>
+
+
+#if $show_message:
+    <div id="show_message" class="ui-corner-all">$show_message</div><br />
+#end if
+
+<input type="hidden" id="sbRoot" value="$sbRoot" />
+
+<script type="text/javascript" src="$sbRoot/js/displayShow.js?$sbPID"></script>
+<script type="text/javascript" src="$sbRoot/js/plotTooltip.js?$sbPID"></script>
+<script type="text/javascript" src="$sbRoot/js/ajaxEpSearch.js?$sbPID"></script>
+
+<div class="navShows">
+</div>
+
+<div class="tvshowImg"><a href="$sbRoot/showPoster/?show=$show.tvdbid&amp;which=poster" rel="dialog" title="$show.name"><img src="$sbRoot/showPoster/?show=$show.tvdbid&amp;which=poster" class="posterThumb" alt=""/></a>
+</div>
+
+<div class="showInfo">
+<h1 class="title">$header</h1>
+
+<div id="summary" class="align-left">
+<table class="infoTable" cellspacing="1" border="0" cellpadding="0">
+<tr>
+<td>
+<table>
+#if $show.network and $show.airs:
+    <tr><td class="showLegend">Airs: </td><td>$show.airs on $show.network</td></tr>
+#else if $show.network:
+    <tr><td class="showLegend">Airs: </td><td>$show.network</td></tr>
+#else if $show.airs:
+    <tr><td class="showLegend">Airs: </td><td>$show.airs</td></tr>
+#end if
+    <tr><td class="showLegend">Status: </td><td>$show.status</td></tr>
+#if $showLoc[1]:
+    <tr><td class="showLegend">Location: </td><td><small>$showLoc[0]</small></td></tr>
+#else:
+    <tr><td class="showLegend"><span style="color: red;">Location: </span></td><td><span style="color: red;">$showLoc[0]</span> (dir is missing)</td></tr>
+#end if
+#set $anyQualities, $bestQualities = $Quality.splitQuality(int($show.quality))
+    <tr><td class="showLegend">Quality: </td><td>
+#if $show.quality in $qualityPresets:
+<span class="quality $qualityPresetStrings[$show.quality]">$qualityPresetStrings[$show.quality]</span>
+#else:
+#if $anyQualities:
+initially download: <b><%=", ".join([Quality.qualityStrings[x] for x in anyQualities])%></b> #if $bestQualities then " + " else ""#
+#end if
+#if $bestQualities:
+replace with: <b><%=", ".join([Quality.qualityStrings[x] for x in bestQualities])%></b>
+#end if 
+#end if
+    </td></tr>
+    </table>
+    <td>
+    <table>
+    <tr><td class="showLegend">Language:</td><td><img src="$sbRoot/images/flags/${show.lang}.png" width="16" height="11" alt="$show.lang" title="$show.lang" /></td></tr>
+    <tr><td class="showLegend">Flatten Folders: </td><td><img src="$sbRoot/images/#if $show.flatten_folders == 1 or $sickbeard.NAMING_FORCE_FOLDERS then "yes16.png\" alt=\"Y" else "no16.png\" alt=\"N"#" width="16" height="16" /></td></tr>
+    <tr><td class="showLegend">Paused: </td><td><img src="$sbRoot/images/#if int($show.paused) == 1 then "yes16.png\" alt=\"Y" else "no16.png\" alt=\"N"#" width="16" height="16" /></td></tr>
+    <tr><td class="showLegend">Air-by-Date: </td><td><img src="$sbRoot/images/#if int($show.air_by_date) == 1 then "yes16.png\" alt=\"Y" else "no16.png\" alt=\"N"#" width="16" height="16" /></td></tr>
+</table>
+</td>
+</tr>
+#if $show.exceptions:
+<table>
+    <tr><td class="showLegend">Scene Exceptions: </td><td>$exceptions_string</td></tr>
+</table>
+#end if
+</table>
+</div>
+<br>
+  <h1 class="title" style="line-height:normal">
+      #if int($episode.season) == 0 then "Special "+str($episode.episode) else "Season "+str($episode.season)+" Episode "+str($episode.episode)#:<br>
+      ${episode.name}</h1>
+  <div id="summary" class="align-left">
+#set $curStatus, $curQuality = $Quality.splitCompositeStatus(int($episode.status))
+      <table width="100%"  style="text-align:center">
+        <tr>
+          <th>NFO</th><th>BTN</th><th>Air Date</th><th>Status</th><th>Quality</th>
+        </tr>
+        <tr style="text-align:center">
+          <td><img src="$sbRoot/images/#if $episode.hasnfo == 1 then "nfo.gif\" alt=\"Y" else "nfo-no.gif\" alt=\"N"#" width="23" height="11" /></td>
+          <td><img src="$sbRoot/images/#if $episode.hastbn == 1 then "tbn.gif\" alt=\"Y" else "tbn-no.gif\" alt=\"N"#" width="23" height="11" /></td>
+          <td>#if $episode.airdate == "0001-01-01" then "never" else $episode.airdate#</td>
+          <td>$statusStrings[$curStatus]</td>
+          <td><span class="quality $Quality.qualityStrings[$curQuality]">$Quality.qualityStrings[$curQuality]</span></td>
+        </tr>
+      </table>
+   </div>
+   <div id="summary" class="align-left">
+      <table width="100%">
+        <tr>
+          <th>Location:</th>
+        </tr>
+        <tr>
+          <td>$episode.location</td>
+        </tr>
+      </table>
+  </div>  
+  #if $episode.description
+  <div id="summary" class="align-left">
+      <table width="100%">
+      <tr><th>Description:</th></tr>
+      <tr><td><small>${episode.description}</small></td></tr>
+      </table>
+  </div>
+  #end if
+
+      <table width="100%" class="align-left">
+      <tr><th colspan=2 style="text-align:center">Recognised filenames:</th></tr>
+      <tr><td colspan=2><div id="summary"><small>Filenames are sanitized before comparison against the pattern name below. Patterns marked with "-" are considered low confidence as they have no indication regarding the season. in these cases, season 1 is assumed. Patterns marked "+" are used in episode based search.</small></div></td></tr>
+      #set $lastid = -1
+      #for $pinfo in $names:
+      #if $pinfo[1] != $lastid
+      #set $lastid = $pinfo[1]
+      <tr><th colspan=2>$pinfo[4] ($pinfo[2])</th></tr>
+      #end if
+      <tr>
+        <td width="3%">
+        #if $pinfo[2] < 5
+        -
+        #end if
+        #if $pinfo[2] > 9 or $pinfo[2] < 0
+        +
+        #end if
+        </td>
+        <td>$pinfo[3]</td>
+      </tr>
+      #end for
+      </table>
+
+</div>
+
+#include $os.path.join($sickbeard.PROG_DIR,"gui/slick/interfaces/default/inc_bottom.tmpl")

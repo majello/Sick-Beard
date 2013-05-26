@@ -20,6 +20,7 @@ from __future__ import with_statement
 
 import datetime
 import threading
+import sys
 
 import sickbeard
 
