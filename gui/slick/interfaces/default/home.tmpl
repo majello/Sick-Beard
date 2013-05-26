@@ -185,7 +185,7 @@ $myShowList.sort(lambda x, y: cmp(x.name, y.name))
 	    <td>
 	    	<div class="imgHomeWrapper $layout">
 		    	<a href="$sbRoot/showPoster/?show=$curShow.tvdbid&amp;which=$layout" rel="dialog" title="$curShow.name">
-		    		<img src="$sbRoot/images/grey.gif" data-original="$sbRoot/showPoster/?show=$curShow.tvdbid&amp;which=$which_thumb" class="$layout" alt="$curShow.tvdbid"/>
+		    		<img src="$sbRoot/images/grey.gif" data-original="$sbRoot/showPoster/?show=$curShow.tvdbid&amp;which=$which_thumb" class="$layout lazy" alt="$curShow.tvdbid"/>
 		    	</a>
 	    	</div>
 	    </td>
@@ -196,7 +196,7 @@ $myShowList.sort(lambda x, y: cmp(x.name, y.name))
 	    	<span style="display: none;">$curShow.name</span>
 	    	<div class="imgHomeWrapper imgHomeWrapperRounded $layout">
 	    		<a href="$sbRoot/home/displayShow?show=$curShow.tvdbid">
-	    		<img src="$sbRoot/images/grey.gif" data-original="$sbRoot/showPoster/?show=$curShow.tvdbid&amp;which=$which_thumb" class="$layout" alt="$curShow.tvdbid" title="$curShow.name"/>
+	    		<img src="$sbRoot/images/grey.gif" data-original="$sbRoot/showPoster/?show=$curShow.tvdbid&amp;which=$which_thumb" class="$layout lazy" alt="$curShow.tvdbid" title="$curShow.name"/>
 	    	</div>
 	    </td>
 	#else if $layout == 'simple':
