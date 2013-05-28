@@ -91,7 +91,7 @@ class TVCache():
     def _checkItemAuth(self, title, url):
         return True
 
-    def updateCache(self,source="Unknown"):
+    def updateCache(self):
 
         if not self.shouldUpdate():
             return
@@ -124,13 +124,12 @@ class TVCache():
             return []
 
         for item in items:
-
-            self._parseItem(item,source)
+            self._parseItem(item)
 
     def _translateLinkURL(self, url):
         return url.replace('&amp;','&')
 
-    def _parseItem(self, item,source="Unknown"):
+    def _parseItem(self, item):
 
         title = helpers.get_xml_text(item.getElementsByTagName('title')[0])
         url = helpers.get_xml_text(item.getElementsByTagName('link')[0])
@@ -145,7 +144,7 @@ class TVCache():
 
         logger.log(u"Adding item from RSS to cache: "+title, logger.DEBUG)
 
-        self._addCacheEntry(title, url, source=source)
+        self._addCacheEntry(title, url)
 
     def _getLastUpdate(self):
         myDB = self._getDB()

@@ -274,7 +274,7 @@ class GenericProvider:
 
         logger.log(u"Searching "+self.name+" for " + episode.prettyName())
 
-        self.cache.updateCache(source="Episode Search")
+        self.cache.updateCache()
         results = self.cache.searchCache(episode, manualSearch)
         logger.log(u"Cache results: "+str(results), logger.DEBUG)
 

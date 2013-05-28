@@ -44,31 +44,37 @@ def _nameVariations(name, network=True):
     # result = result + [" ".join([x for x in sname if x != "documentaries"])]
     name = _sanitizedEpisodeName(name, None)
     if network:
-        if name in networkVariationsCache:
-            return networkVariationsCache[name]
-        # check name variants e.g. history => history channel
-        if name.lower() in network_variants:
-            name = network_variants[name.lower()]
-        sname = name.lower().split()
-        # for our purposes, skip channel numbers (e.g. BBC Four -> BBC)
-        sname = [n for n in sname if n not in litnums.values()]
-        # check for Channel -> Ch
-        result = result + [" ".join(["ch" if x == "channel" else x for x in sname])]
-        # version without channel
-        result = result + [" ".join(["" if x == "channel" else x for x in sname])]
-        # check for National Geographics -> NG
-        if len(sname) > 1:
-            result = result + ["".join([x[0] for x in list(sname)])]
-        networkVariationsCache[name] = result
+        try:
+            if name in networkVariationsCache:
+                return networkVariationsCache[name]
+            # check name variants e.g. history => history channel
+            if name.lower() in network_variants:
+                name = network_variants[name.lower()]
+            sname = name.lower().split()
+            # for our purposes, skip channel numbers (e.g. BBC Four -> BBC)
+            sname = [n for n in sname if n not in litnums.values()]
+            # check for Channel -> Ch
+            result = result + [" ".join(["ch" if x == "channel" else x for x in sname])]
+            # version without channel
+            result = result + [" ".join(["" if x == "channel" else x for x in sname])]
+            # check for National Geographics -> NG
+            if len(sname) > 1:
+                result = result + ["".join([x[0] for x in list(sname)])]
+            networkVariationsCache[name] = result
+        except Exception as e:
+            logger.log("name variantions (network) returned error: %s" % (e))
     else:
-        if name in nameVariationsCache:
-            return nameVariationsCache[name]
-        sname = name.lower().split()
-        # check for Documentaries ending
-        if sname[-1] == "documentaries":
-            sname = sname[:-1]
-        result = [" ".join(sname)]
-        nameVariationsCache[name] = result
+        try:
+            if name in nameVariationsCache:
+                return nameVariationsCache[name]
+            sname = name.lower().split()
+            # check for Documentaries ending
+            if sname[-1] == "documentaries":
+                sname = sname[:-1]
+            result = [" ".join(sname)]
+            nameVariationsCache[name] = result
+        except Exception as e:
+            logger.log("name variantions (no network) returned error: %s" % (e))
     return result
 
 def _numEpisodesForSeason(episode):
@@ -105,11 +111,14 @@ def _xOfyPattern(episode, weak=False):
     return xyPatternCache[episode]
 
 def _isDocumentary(show):
-    if not show in docTestCache:
-        if show.genre:
-            docTestCache[show] = "documentary" in show.genre.lower()
-        else:
-            docTestCache[show] = False
+    try:
+        if not show in docTestCache:
+            if show.genre:
+                docTestCache[show] = "documentary" in show.genre.lower()
+            else:
+                docTestCache[show] = False
+    except Exception as e:    
+        logger.log("documentary check returned error: %s" % (e))
     return docTestCache[show]
 
 def _sanitizedEpisodeName(episode,tvdbid = None):
