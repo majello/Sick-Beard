@@ -108,7 +108,13 @@ class NameParser(object):
             if 'ep_num' in named_groups:
                 ep_num = self._convert_number(match.group('ep_num'))
                 if 'extra_ep_num' in named_groups and match.group('extra_ep_num'):
-                    result.episode_numbers = range(ep_num, self._convert_number(match.group('extra_ep_num'))+1)
+                    ee_num = self._convert_number(match.group('extra_ep_num'))
+                    # fix inverted episode numbers
+                    if ep_num > ee_num:
+                        e1 = ep_num
+                        ep_num = ee_num
+                        ee_num = e1
+                    result.episode_numbers = range(ep_num, ee_num+1)
                 else:
                     result.episode_numbers = [ep_num]
 
@@ -191,6 +197,13 @@ class NameParser(object):
             
             return result
 
+    def _validResult(self,result):
+        hasSeries = result.series_name != None
+        hasEpisodes = result.season_number != None and (result.episode_numbers != None and result.episode_numbers != [])
+        hasABD = result.air_date != None
+        return hasSeries and (hasABD or hasEpisodes)
+        # ((final_result.season_number == None or final_result.episode_numbers == None) and final_result.air_date == None) or final_result.series_name == None:
+
     def parse(self, name, source="Unknown",fullname=True,isFile=True):
         
         name = self._unicodify(name)
@@ -223,12 +236,14 @@ class NameParser(object):
         # parse the dirname for extra info if needed
         dir_name_result = self._parse_string(dir_name)
 
+        final_result.season_number = self._combine_results(file_name_result, dir_name_result, 'season_number')
+
         # build the ParseResult object
         final_result.air_date = self._combine_results(file_name_result, dir_name_result, 'air_date')
 
         if not final_result.air_date:
-            final_result.season_number = self._combine_results(file_name_result, dir_name_result, 'season_number')
             final_result.episode_numbers = self._combine_results(file_name_result, dir_name_result, 'episode_numbers')
+            
         
         # if the dirname has a release group/show name I believe it over the filename
         final_result.series_name = self._combine_results(dir_name_result, file_name_result, 'series_name')
@@ -248,7 +263,7 @@ class NameParser(object):
                 final_result.which_regex += dir_name_result.which_regex
 
         # if there's no useful info at all then we try the naming overrides, but only if we actually get a filename, not other parts
-        if isFile and (final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None):
+        if isFile and not self._validResult(final_result): #(final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None):
             x = invalidNames.findFile(base_file_name,show=final_result.series_name,snum=final_result.season_number,epnum=final_result.episode_numbers,source=source)
             # overrrides override
             if x["showname"] != None and x["showname"] != "": final_result.series_name = x["showname"] 
@@ -256,7 +271,7 @@ class NameParser(object):
             if x["episode"] != None: final_result.episode_numbers = x["episode"]
                 
         # if there's no useful info so far, we check the name based resolution, but only if we actually get a filename, not other parts
-        if isFile and (final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None):
+        if isFile and not self._validResult(final_result): #(final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None):
             episode = episodeParser.episode_parser.match(base_file_name)
             if episode != None:
                 final_result.series_name = episode.show.name
@@ -265,7 +280,7 @@ class NameParser(object):
                 
         # if everything fails then raise an exception
         # if final_result.season_number == None and not final_result.episode_numbers and final_result.air_date == None and not final_result.series_name:
-        if final_result.season_number == None or (final_result.episode_numbers == None and final_result.air_date == None) or final_result.series_name == None:
+        if not self._validResult(final_result): #((final_result.season_number == None or final_result.episode_numbers == None) and final_result.air_date == None) or final_result.series_name == None:
             raise InvalidNameException("Unable to parse "+name.encode(sickbeard.SYS_ENCODING))
 
         name_parser_cache.add(name, final_result)
@@ -351,7 +366,8 @@ class ParseResult(object):
         return to_return.encode('utf-8')
 
     def _is_air_by_date(self):
-        if self.season_number == None and len(self.episode_numbers) == 0 and self.air_date:
+#        if self.season_number == None and len(self.episode_numbers) == 0 and self.air_date:
+        if len(self.episode_numbers) == 0 and self.air_date:
             return True
         return False
     air_by_date = property(_is_air_by_date)

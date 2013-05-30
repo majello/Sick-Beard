@@ -37,7 +37,7 @@ from lib.tvdb_api import tvdb_api, tvdb_exceptions
 
 from lib.imdb import imdb
 
-from sickbeard import db
+from sickbeard import db, show_name_helpers
 from sickbeard import helpers, exceptions, logger
 from sickbeard.exceptions import ex
 from sickbeard import tvrage
@@ -459,7 +459,7 @@ class TVShow(object):
             logger.log(u"Unable to parse the filename "+file+" into a valid episode", logger.ERROR)
             return None
         
-        if parse_result.series_name != self.name and parse_result.series_name != "" and parse_result.series_name != None:
+        if not show_name_helpers.isCorrectShow(parse_result.series_name, self) and parse_result.series_name != "" and parse_result.series_name != None:
             # TODO: send to file exceptions and mark for move
             logger.log("parse_result: "+str(parse_result))
             logger.log(u"File %s (%s), does not belong to %s" % (file,parse_result.series_name,self.name), logger.ERROR)

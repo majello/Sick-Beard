@@ -47,7 +47,7 @@ def filterBadReleases(name,source="Unknown"):
         fp = NameParser()
         parse_result = fp.parse(name,source=source)
     except InvalidNameException:
-        logger.log(u"Unable to parse the filename "+name+" into a valid episode", logger.WARNING)
+#        logger.log(u"Unable to parse the filename "+name+" into a valid episode", logger.WARNING)
         return False
 
     # use the extra info and the scene group to filter against
@@ -270,3 +270,22 @@ def allPossibleShowNames(show):
 
     return showNames
 
+def cleanName(name):
+    r = name.lower()
+    r = r.replace("."," ")
+    r = r.replace(":","")
+    r = r.replace("-","")
+    r = r.replace("_","")
+    r = r.replace(",","")
+    r = r.replace(u"'","")
+    r = r.replace("\"","")
+    r = r.replace("  "," ")
+    return r
+
+def isCorrectShow(name,show):
+    cn = cleanName(name)
+    all_names = allPossibleShowNames(show)
+    for n in all_names:
+        if cn == cleanName(n):
+            return True
+    return False
