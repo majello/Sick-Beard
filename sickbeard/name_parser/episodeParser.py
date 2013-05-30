@@ -85,7 +85,7 @@ def _networkShowPattern(episode, shownames):
     if not episode.show.tvdbid in showpatternCache:
         networks = set()
         shows = {x for n in shownames for x in _nameVariations(n, False)}
-        if _isDocumentary(episode.show):
+        if _isDocumentary(episode.show) and episode.show.network:
             networks = {" ".join([y, n]) for n in shows for y in _nameVariations(episode.show.network, True) if n != y and episode.show.network.lower() != n and not n.endswith("documentaries")}
         r = list(shows | networks)
         showpatternCache[episode.show.tvdbid] = r
