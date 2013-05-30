@@ -252,7 +252,7 @@ class EpisodeParser(object):
                 for r in set(l[2]):
                     nlist[r] = (episode,l[0],l[1])
             except Exception as e:
-                logger.log("name pattern returned error: %s" % (e))
+                logger.log("name pattern for show [%s], episode [%s] returned error: %s" % (allnames,episode,e))
 
     def _printCache(self):
         for pattern, info in self.nameList.iteritems():
